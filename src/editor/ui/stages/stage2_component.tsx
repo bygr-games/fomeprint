@@ -2,6 +2,7 @@ import jsx from "texsaur";
 import { KTUComponent } from "fra.ktu.red-component";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
+import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
 
 type StickerCategory = {
   id: string;
@@ -81,6 +82,7 @@ class Stage2 extends KTUComponent {
                     class="sticker-thumb"
                     title={assetPath}
                     aria-label={`${selectedCategory?.label ?? "Sticker"} ${index + 1}`}
+                    onclick={() => this.createStickerLayer(assetPath)}
                   >
                     <img src={assetPath} alt="" />
                   </button>
@@ -171,6 +173,14 @@ class Stage2 extends KTUComponent {
 
   private goToThirdStage() {
     executeCommand(new SetFomeprintStageCommand(3));
+  }
+
+  private createStickerLayer(assetPath: string) {
+    if (!assetPath) {
+      return;
+    }
+
+    executeCommand(new CreateStickerVideoLayerCommand(assetPath));
   }
 }
 
