@@ -1,5 +1,8 @@
 import jsx from "texsaur";
-import { EventDispatcher, KTUComponent } from "fra.ktu.red-component";
+import { KTUComponent } from "fra.ktu.red-component";
+import { Stage1Component } from "./stages/stage1_component";
+import { Stage2Component } from "./stages/stage2_component";
+import { Stage3Component } from "./stages/stage3_component";
 
 class EditorUI extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -9,31 +12,10 @@ class EditorUI extends KTUComponent {
   render(): Element {
     return (
       <div class="editor-ui">
-        <div class="panel-container left-ui">
-          <button type="button" onclick={() => this.snapshotCameraLayer()}>
-            Snapshot Camera to Video Layer
-          </button>
-          <button type="button" onclick={() => this.toggleBayerDithering()}>
-            Toggle Bayer Dithering
-          </button>
-        </div>
+        <Stage1Component binding="fomeprint.stage" />
+        <Stage2Component binding="fomeprint.stage" />
+        <Stage3Component binding="fomeprint.stage" />
       </div>
-    );
-  }
-
-  snapshotCameraLayer() {
-    EventDispatcher.getInstance().dispatchEvent(
-      "editorScene",
-      "snapshotCameraToVideoLayer",
-      {},
-    );
-  }
-
-  toggleBayerDithering() {
-    EventDispatcher.getInstance().dispatchEvent(
-      "editorScene",
-      "toggleBayerDithering",
-      {},
     );
   }
 

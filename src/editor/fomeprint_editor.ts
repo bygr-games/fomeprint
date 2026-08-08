@@ -10,8 +10,6 @@ import { NewStateCommand } from "./commands/new_state_command";
 import { EditorUIComponent } from "./ui/editor_ui";
 import { ActivateThingCommand } from "./commands/activate_thing_command";
 import { SetLayerFieldCommand } from "./commands/layers/set_layer_field_command";
-import { SnapshotCameraToVideoLayerCommand } from "./commands/layers/snapshot_camera_to_video_layer_command";
-import { ToggleBayerDitheringCommand } from "./commands/shaders/toggle_bayer_dithering_command";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
@@ -27,6 +25,8 @@ export class FomeprintEditor {
     this.canvasContainer = canvasContainer;
     this.uiContainer = uiContainer;
     executeCommand(new NewStateCommand());
+
+    DataStore.getInstance().setStore("fomeprint.stage", 1);
 
     const state = DataStore.getInstance().getStore("editorScene") as SceneState;
     this.canvasContainer.style.width = state.width + "px";
@@ -211,35 +211,5 @@ export class FomeprintEditor {
         DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
       },
     );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene",
-      "snapshotCameraToVideoLayer",
-      () => {
-        executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
-      },
-    );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene",
-      "toggleBayerDithering",
-      () => {
-        executeCommand(new ToggleBayerDitheringCommand("editorScene"));
-      },
-    );
-
-    window.addEventListener("keydown", (event: KeyboardEvent) => {
-      const isSnapshotShortcut =
-        (event.ctrlKey || event.metaKey) &&
-        event.shiftKey &&
-        event.key.toLowerCase() === "k";
-
-      if (!isSnapshotShortcut) {
-        return;
-      }
-
-      event.preventDefault();
-      executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
-    });
   }
 }
