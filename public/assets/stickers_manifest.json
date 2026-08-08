@@ -1,0 +1,39 @@
+{
+  "categories": [
+    {
+      "id": "accessories",
+      "label": "Accessories",
+      "assets": [
+        "/assets/accessories/accessory-1.svg",
+        "/assets/accessories/accessory-2.svg"
+      ]
+    },
+    {
+      "id": "eyes",
+      "label": "Eyes",
+      "assets": [
+        "/assets/eyes/eye-1.svg",
+        "/assets/eyes/eye-2.svg",
+        "/assets/eyes/eye-3.svg",
+        "/assets/eyes/eye-4.svg",
+        "/assets/eyes/eye-5.svg",
+        "/assets/eyes/eye-6.svg",
+        "/assets/eyes/eye-7.svg"
+      ]
+    },
+    {
+      "id": "mouths",
+      "label": "Mouths",
+      "assets": [
+        "/assets/mouths/mouth-1.svg",
+        "/assets/mouths/mouth-2.svg",
+        "/assets/mouths/mouth-3.svg"
+      ]
+    },
+    {
+      "id": "noses",
+      "label": "Noses",
+      "assets": []
+    }
+  ]
+}
