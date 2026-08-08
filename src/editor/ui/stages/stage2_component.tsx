@@ -1,5 +1,7 @@
 import jsx from "texsaur";
 import { KTUComponent } from "fra.ktu.red-component";
+import { executeCommand } from "../../../ktu/helpers/commands_manager";
+import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 
 class Stage2 extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -25,10 +27,16 @@ class Stage2 extends KTUComponent {
     const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
 
     return (
-      <div
-        class={`panel-container left-ui stage-panel ${visibilityClass}`}
-      ></div>
+      <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
+        <button type="button" onclick={() => this.goToThirdStage()}>
+          Next
+        </button>
+      </div>
     );
+  }
+
+  private goToThirdStage() {
+    executeCommand(new SetFomeprintStageCommand(3));
   }
 }
 

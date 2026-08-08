@@ -302,3 +302,25 @@ code {
 .stage-panel.stage-visible {
   display: block;
 }
+
+.stage-controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage-control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-control-label {
+  min-width: 90px;
+}
+
+.stage-control-value {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+}

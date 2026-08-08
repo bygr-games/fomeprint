@@ -35,7 +35,8 @@ export class NewStateCommand implements ICommand {
       console.error("Error loading autosaved state:", e);
     }
     const adjustmentShader = AdjustmentShader.getDefaultState("editorScene");
-    adjustmentShader.contrast = 5;
+    adjustmentShader.contrast = 4;
+    adjustmentShader.brightness = 4;
 
     const cameraLayer = CameraLayer.getDefaultState("editorScene");
     cameraLayer.hFlip = true;

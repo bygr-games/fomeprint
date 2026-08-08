@@ -86,10 +86,10 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       const cameraAdjustmentShader = cameraLayer.shaders.find(
         (shader) => shader.type === "adjustment",
       );
+      const adjustmentShader = AdjustmentShader.getDefaultState(
+        this.sceneStateId,
+      );
       if (cameraAdjustmentShader) {
-        const adjustmentShader = AdjustmentShader.getDefaultState(
-          this.sceneStateId,
-        );
         const {
           id: _oldId,
           name: _oldName,
@@ -97,8 +97,8 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
           ...fields
         } = cameraAdjustmentShader as Record<string, unknown>;
         Object.assign(adjustmentShader as Record<string, unknown>, fields);
-        videoLayer.shaders = [adjustmentShader];
       }
+      videoLayer.shaders = [adjustmentShader];
 
       const cameraLayerIndex = sceneState.layers.findIndex(
         (layer) => layer.id === cameraLayer.id,

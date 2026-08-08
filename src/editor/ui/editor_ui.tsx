@@ -1,5 +1,6 @@
 import jsx from "texsaur";
 import { KTUComponent } from "fra.ktu.red-component";
+import { DebugComponent } from "./debug_component";
 import { Stage1Component } from "./stages/stage1_component";
 import { Stage2Component } from "./stages/stage2_component";
 import { Stage3Component } from "./stages/stage3_component";
@@ -15,6 +16,7 @@ class EditorUI extends KTUComponent {
         <Stage1Component binding="fomeprint.stage" />
         <Stage2Component binding="fomeprint.stage" />
         <Stage3Component binding="fomeprint.stage" />
+        <DebugComponent />
       </div>
     );
   }
