@@ -11,6 +11,7 @@ import { EditorUIComponent } from "./ui/editor_ui";
 import { ActivateThingCommand } from "./commands/activate_thing_command";
 import { SetLayerFieldCommand } from "./commands/layers/set_layer_field_command";
 import { SnapshotCameraToVideoLayerCommand } from "./commands/layers/snapshot_camera_to_video_layer_command";
+import { ToggleBayerDitheringCommand } from "./commands/shaders/toggle_bayer_dithering_command";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
@@ -216,6 +217,14 @@ export class FomeprintEditor {
       "snapshotCameraToVideoLayer",
       () => {
         executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
+      },
+    );
+
+    EventDispatcher.getInstance().addEventListener(
+      "editorScene",
+      "toggleBayerDithering",
+      () => {
+        executeCommand(new ToggleBayerDitheringCommand("editorScene"));
       },
     );
 

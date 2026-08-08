@@ -13,6 +13,9 @@ class EditorUI extends KTUComponent {
           <button type="button" onclick={() => this.snapshotCameraLayer()}>
             Snapshot Camera to Video Layer
           </button>
+          <button type="button" onclick={() => this.toggleBayerDithering()}>
+            Toggle Bayer Dithering
+          </button>
         </div>
       </div>
     );
@@ -22,6 +25,14 @@ class EditorUI extends KTUComponent {
     EventDispatcher.getInstance().dispatchEvent(
       "editorScene",
       "snapshotCameraToVideoLayer",
+      {},
+    );
+  }
+
+  toggleBayerDithering() {
+    EventDispatcher.getInstance().dispatchEvent(
+      "editorScene",
+      "toggleBayerDithering",
       {},
     );
   }

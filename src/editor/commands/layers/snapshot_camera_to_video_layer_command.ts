@@ -1,4 +1,5 @@
 import {
+  AdjustmentShader,
   cacheAsset,
   DataStore,
   type SceneState,
@@ -66,7 +67,7 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         return;
       }
 
-      const base64Frame = await this.captureViewportSizedCameraFrame(
+      const base64Frame = await this.captureCameraFrameScaledToViewport(
         application,
         runtimeLayers,
         cameraLayer.id,
@@ -80,6 +81,23 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       videoLayer.scale = cameraLayer.scale;
       videoLayer.hFlip = cameraLayer.hFlip;
       videoLayer.vFlip = cameraLayer.vFlip;
+
+      const cameraAdjustmentShader = cameraLayer.shaders.find(
+        (shader) => shader.type === "adjustment",
+      );
+      if (cameraAdjustmentShader) {
+        const adjustmentShader = AdjustmentShader.getDefaultState(
+          this.sceneStateId,
+        );
+        const {
+          id: _oldId,
+          name: _oldName,
+          type: _oldType,
+          ...fields
+        } = cameraAdjustmentShader as Record<string, unknown>;
+        Object.assign(adjustmentShader as Record<string, unknown>, fields);
+        videoLayer.shaders = [adjustmentShader];
+      }
 
       const cameraLayerIndex = sceneState.layers.findIndex(
         (layer) => layer.id === cameraLayer.id,
@@ -113,12 +131,14 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
     }
   }
 
-  private async captureViewportSizedCameraFrame(
+  private async captureCameraFrameScaledToViewport(
     application: Application,
     runtimeLayers: RuntimeLayer[] | undefined,
     cameraLayerId: number,
   ): Promise<string> {
     const layerVisibilities = new Map<number, boolean>();
+    const stage = application.stage as any;
+    const previousStageFilters = stage.filters;
 
     try {
       for (const runtimeLayer of runtimeLayers ?? []) {
@@ -126,9 +146,13 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         if (!sprite || typeof sprite.visible !== "boolean") {
           continue;
         }
+
         layerVisibilities.set(runtimeLayer.id, sprite.visible);
         sprite.visible = runtimeLayer.id === cameraLayerId;
       }
+
+      // Exclude scene/global shader pass while preserving camera layer output.
+      stage.filters = [];
 
       return await application.renderer.extract.base64({
         target: application.stage,
@@ -140,11 +164,14 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         ),
       });
     } finally {
+      stage.filters = previousStageFilters;
+
       for (const runtimeLayer of runtimeLayers ?? []) {
         const sprite = runtimeLayer.mainSprite;
         if (!sprite || typeof sprite.visible !== "boolean") {
           continue;
         }
+
         const previousVisibility = layerVisibilities.get(runtimeLayer.id);
         if (previousVisibility !== undefined) {
           sprite.visible = previousVisibility;
