@@ -386,3 +386,54 @@ code {
   height: 100%;
   object-fit: contain;
 }
+
+.stage3-print-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, 90vw);
+}
+
+.stage3-print-header {
+  font-weight: 700;
+}
+
+.stage3-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage3-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.stage3-status-ok {
+  background: #22c55e;
+}
+
+.stage3-status-warn {
+  background: #f59e0b;
+}
+
+.stage3-status-busy {
+  background: #0ea5e9;
+}
+
+.stage3-status-text {
+  font-size: 14px;
+}
+
+.stage3-warning {
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.stage3-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

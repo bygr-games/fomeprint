@@ -16,7 +16,7 @@ async function getSvgFiles(dir) {
       return entry.isFile() && entry.name.toLowerCase().endsWith(".svg")
         ? [entryPath]
         : [];
-    })
+    }),
   );
 
   return files.flat();
@@ -163,13 +163,17 @@ async function main() {
     if (result.changed) {
       changedCount += 1;
       changedPixels += result.enclosedPixelCount;
-      console.log(`Updated ${path.relative(ROOT_DIR, svgFile)} (${result.enclosedPixelCount} px)`);
+      console.log(
+        `Updated ${path.relative(ROOT_DIR, svgFile)} (${result.enclosedPixelCount} px)`,
+      );
     } else {
       console.log(`No enclosed gaps in ${path.relative(ROOT_DIR, svgFile)}`);
     }
   }
 
-  console.log(`\nDone. Updated ${changedCount}/${svgFiles.length} files. Filled ${changedPixels} enclosed pixels.`);
+  console.log(
+    `\nDone. Updated ${changedCount}/${svgFiles.length} files. Filled ${changedPixels} enclosed pixels.`,
+  );
 }
 
 main().catch((error) => {
