@@ -17,6 +17,31 @@ export class FomeprintEditor {
   private draggingLayerId: number | null = null;
   private lastDragX: number | null = null;
   private lastDragY: number | null = null;
+
+  private fitCanvasToViewport = () => {
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight);
+
+    this.canvasContainer.style.width = width + "px";
+    this.canvasContainer.style.height = height + "px";
+
+    const state = DataStore.getInstance().getStore("editorScene") as
+      | SceneState
+      | undefined;
+    if (state && (state.width !== width || state.height !== height)) {
+      DataStore.getInstance().setStore("editorScene", {
+        ...state,
+        width,
+        height,
+      });
+    }
+
+    const application = DataStore.getInstance().getStore("application") as
+      | { resize?: () => void }
+      | undefined;
+    application?.resize?.();
+  };
+
   public constructor(canvasContainer: HTMLElement, uiContainer: HTMLElement) {
     console.log(
       "Initializing FomeprintEditor with autosaved state:",
@@ -27,10 +52,7 @@ export class FomeprintEditor {
     executeCommand(new NewStateCommand());
 
     DataStore.getInstance().setStore("fomeprint.stage", 1);
-
-    const state = DataStore.getInstance().getStore("editorScene") as SceneState;
-    this.canvasContainer.style.width = state.width + "px";
-    this.canvasContainer.style.height = state.height + "px";
+    this.fitCanvasToViewport();
 
     this.canvasContainer.appendChild(
       RedViewerComponent({
@@ -39,6 +61,7 @@ export class FomeprintEditor {
       }),
     );
     this.uiContainer.appendChild(EditorUIComponent({}));
+    window.addEventListener("resize", this.fitCanvasToViewport);
 
     EventDispatcher.getInstance().addEventListener(
       "editorScene.width",
