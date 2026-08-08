@@ -28,7 +28,13 @@ const CMD = {
   FEED: (dots: number) => new Uint8Array([0x1b, 0x4a, dots & 0xff]),
   DENSITY: (level: number) => new Uint8Array([0x1d, 0x7c, level & 0xff]),
   HEAT_SETTINGS: (maxDots: number, heatTime: number, heatInterval: number) =>
-    new Uint8Array([0x1b, 0x37, maxDots & 0xff, heatTime & 0xff, heatInterval & 0xff]),
+    new Uint8Array([
+      0x1b,
+      0x37,
+      maxDots & 0xff,
+      heatTime & 0xff,
+      heatInterval & 0xff,
+    ]),
   RASTER_HEADER: (widthBytes: number, heightLines: number) =>
     new Uint8Array([
       0x1d,
@@ -352,7 +358,10 @@ class PhomemoBluetoothPrinter {
       await delay(30);
 
       for (let offset = 0; offset < raster.data.length; offset += CHUNK_SIZE) {
-        const chunk = raster.data.slice(offset, Math.min(offset + CHUNK_SIZE, raster.data.length));
+        const chunk = raster.data.slice(
+          offset,
+          Math.min(offset + CHUNK_SIZE, raster.data.length),
+        );
         await this.send(chunk);
         await delay(CHUNK_DELAY_MS);
 

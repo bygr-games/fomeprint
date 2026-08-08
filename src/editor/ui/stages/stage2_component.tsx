@@ -105,9 +105,12 @@ class Stage2 extends KTUComponent {
 
   private async loadManifest() {
     try {
-      const response = await fetch("/assets/stickers_manifest.json", {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        this.resolvePublicAssetPath("assets/stickers_manifest.json"),
+        {
+          cache: "no-store",
+        },
+      );
       if (!response.ok) {
         throw new Error("Failed to load stickers manifest");
       }
@@ -125,9 +128,9 @@ class Stage2 extends KTUComponent {
             .map((category) => ({
               id: category.id,
               label: category.label,
-              assets: category.assets.filter(
-                (asset) => typeof asset === "string",
-              ),
+              assets: category.assets
+                .filter((asset) => typeof asset === "string")
+                .map((asset) => this.resolvePublicAssetPath(asset)),
             }))
         : [];
 
@@ -148,6 +151,14 @@ class Stage2 extends KTUComponent {
     }
 
     this.reRender();
+  }
+
+  private resolvePublicAssetPath(path: string): string {
+    if (/^(?:[a-z]+:)?\/\//i.test(path)) {
+      return path;
+    }
+
+    return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
   }
 
   private getSelectedCategory(): StickerCategory | null {

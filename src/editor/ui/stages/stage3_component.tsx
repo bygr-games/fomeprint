@@ -136,7 +136,9 @@ class Stage3 extends KTUComponent {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to connect to printer.";
+        error instanceof Error
+          ? error.message
+          : "Failed to connect to printer.";
       console.error("Phomemo connect error:", error);
       this.printerStatus = {
         ...this.printerStatus,
