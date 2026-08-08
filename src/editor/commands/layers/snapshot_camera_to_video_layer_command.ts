@@ -79,8 +79,9 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       videoLayer.panX = cameraLayer.panX;
       videoLayer.panY = cameraLayer.panY;
       videoLayer.scale = cameraLayer.scale;
-      videoLayer.hFlip = cameraLayer.hFlip;
-      videoLayer.vFlip = cameraLayer.vFlip;
+      // Flip is baked into the captured pixels, so keep the output layer unflipped.
+      videoLayer.hFlip = false;
+      videoLayer.vFlip = false;
 
       const cameraAdjustmentShader = cameraLayer.shaders.find(
         (shader) => shader.type === "adjustment",
