@@ -22,11 +22,11 @@ class Stage3 extends KTUComponent {
 
   render(): Element {
     const isVisible = this.currentStage() === 3;
+    const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
 
     return (
       <div
-        class="panel-container left-ui"
-        style={`display: ${isVisible ? "block" : "none"};`}
+        class={`panel-container left-ui stage-panel ${visibilityClass}`}
       ></div>
     );
   }

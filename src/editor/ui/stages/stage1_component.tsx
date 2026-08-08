@@ -25,12 +25,10 @@ class Stage1 extends KTUComponent {
 
   render(): Element {
     const isVisible = this.currentStage() === 1;
+    const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
 
     return (
-      <div
-        class="panel-container left-ui"
-        style={`display: ${isVisible ? "block" : "none"};`}
-      >
+      <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
         <button type="button" onclick={() => this.snapshotCameraLayer()}>
           Snapshot Camera to Video Layer
         </button>
