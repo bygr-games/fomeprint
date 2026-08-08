@@ -1,5 +1,6 @@
 import {
   DataStore,
+  OuterStrokeShader,
   VideoLayer,
   cacheAsset,
   type SceneState,
@@ -35,8 +36,15 @@ export class CreateStickerVideoLayerCommand implements ICommand {
 
     const imageHash = cacheAsset(this.sceneStateId, this.assetPath);
     const nextLayer = VideoLayer.getDefaultState(this.sceneStateId);
+    const outerStrokeShader = OuterStrokeShader.getDefaultState(
+      this.sceneStateId,
+    );
+    outerStrokeShader.thickness = 6;
+    outerStrokeShader.color = "#ffffff";
+
     nextLayer.imageHash = imageHash;
     nextLayer.scale = 0.35;
+    nextLayer.shaders = [outerStrokeShader];
 
     this.createdLayerId = nextLayer.id;
 
