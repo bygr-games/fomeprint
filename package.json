@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fill:svg-gaps-white": "bun scripts/fill-svg-enclosed-gaps-white.mjs"
   },
   "devDependencies": {
     "texsaur": "^1.0.7",
@@ -14,6 +15,6 @@
     "vite": "^8.2.0"
   },
   "dependencies": {
-    "fra.ktu.red-component": "alpha"
+    "sharp": "^0.34.4"
   }
 }
