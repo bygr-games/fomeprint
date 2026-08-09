@@ -374,7 +374,7 @@ class Stage3 extends KTUComponent {
 
     try {
       await this.printer.printCanvas(canvas);
-      await this.printer.disconnect();
+      void this.disconnectAfterPrintSettles();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Print failed unexpectedly.";
@@ -384,6 +384,26 @@ class Stage3 extends KTUComponent {
         message,
       };
       this.reRender();
+    }
+  }
+
+  private async disconnectAfterPrintSettles(): Promise<void> {
+    // Some printers keep physically feeding paper shortly after data transfer.
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 3000);
+    });
+
+    const status = this.printer.getStatus();
+    const printCompleted =
+      status.print === "idle" && status.message === "Print complete.";
+    if (!printCompleted || status.connection !== "connected") {
+      return;
+    }
+
+    try {
+      await this.printer.disconnect();
+    } catch (error) {
+      console.error("Phomemo auto-disconnect error:", error);
     }
   }
 
