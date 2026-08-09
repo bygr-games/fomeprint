@@ -83,6 +83,7 @@ export class NewStateCommand implements ICommand {
       this.payload ? this.payload : state,
     );
     syncLayerBoundingBoxesByActiveThingId(null);
+    DataStore.getInstance().setStore("fomeprint.stage", 1);
   }
   revert(): void {}
 }

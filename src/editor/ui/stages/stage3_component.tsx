@@ -4,6 +4,8 @@ import {
   getPhomemoBluetoothPrinter,
   type PhomemoPrinterStatus,
 } from "../../printing/phomemo_bluetooth_printer";
+import { executeCommand } from "../../../ktu/helpers/commands_manager";
+import { NewStateCommand } from "../../commands/new_state_command";
 
 type PaperSizeOption = {
   value: string;
@@ -131,6 +133,9 @@ class Stage3 extends KTUComponent {
           )}
 
           <div class="stage3-actions">
+            <button type="button" onclick={() => this.resetState()}>
+              Reset
+            </button>
             <button
               type="button"
               onclick={() => void this.handleConnectButton()}
@@ -374,6 +379,10 @@ class Stage3 extends KTUComponent {
       };
       this.reRender();
     }
+  }
+
+  private resetState() {
+    executeCommand(new NewStateCommand());
   }
 }
 

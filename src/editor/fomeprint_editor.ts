@@ -72,7 +72,6 @@ export class FomeprintEditor {
     this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
-    DataStore.getInstance().setStore("fomeprint.stage", 1);
     this.fitCanvasToViewport();
 
     this.canvasContainer.appendChild(
