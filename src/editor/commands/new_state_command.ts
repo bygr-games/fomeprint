@@ -10,7 +10,10 @@ import {
 import { type ICommand } from "./icommand";
 import { clearCommands, clearRedo } from "../../ktu/helpers/commands_manager";
 import { type SceneState } from "fra.ktu.red-component";
-import { touchThingsById } from "../helpers/active_helper";
+import {
+  syncLayerBoundingBoxesByActiveThingId,
+  touchThingsById,
+} from "../helpers/active_helper";
 
 export class NewStateCommand implements ICommand {
   historyLabel = "NewStateCommand";
@@ -43,6 +46,11 @@ export class NewStateCommand implements ICommand {
     cameraLayer.fillCanvas = true;
     cameraLayer.shaders = [adjustmentShader];
 
+    console.log(
+      "NewStateCommand: creating new state with camera layer",
+      cameraLayer,
+    );
+
     const ditheringShader = BayerDitheringShader.getDefaultState("editorScene");
     ditheringShader.pixelSize = 3;
     ditheringShader.levels = 2;
@@ -74,6 +82,7 @@ export class NewStateCommand implements ICommand {
       "editorScene",
       this.payload ? this.payload : state,
     );
+    syncLayerBoundingBoxesByActiveThingId(null);
   }
   revert(): void {}
 }

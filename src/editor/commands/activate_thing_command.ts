@@ -1,6 +1,9 @@
 import { DataStore } from "fra.ktu.red-component";
 import type { ICommand } from "./icommand";
-import { touchThingsById } from "../helpers/active_helper";
+import {
+  syncLayerBoundingBoxesByActiveThingId,
+  touchThingsById,
+} from "../helpers/active_helper";
 
 export class ActivateThingCommand implements ICommand {
   historyLabel = "ActivateThingCommand";
@@ -16,6 +19,7 @@ export class ActivateThingCommand implements ICommand {
       return;
     }
     DataStore.getInstance().setStore("activeThingId", this.id);
+    syncLayerBoundingBoxesByActiveThingId(this.id);
     touchThingsById(this.oldId);
     touchThingsById(this.id);
   }
@@ -24,6 +28,7 @@ export class ActivateThingCommand implements ICommand {
       return;
     }
     DataStore.getInstance().setStore("activeThingId", this.oldId);
+    syncLayerBoundingBoxesByActiveThingId(this.oldId);
     touchThingsById(this.oldId);
     touchThingsById(this.id);
   }

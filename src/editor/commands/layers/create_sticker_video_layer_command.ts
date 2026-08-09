@@ -6,7 +6,10 @@ import {
   type SceneState,
 } from "fra.ktu.red-component";
 import type { ICommand } from "../icommand";
-import { touchThingsById } from "../../helpers/active_helper";
+import {
+  syncLayerBoundingBoxesByActiveThingId,
+  touchThingsById,
+} from "../../helpers/active_helper";
 
 export class CreateStickerVideoLayerCommand implements ICommand {
   historyLabel = "CreateStickerVideoLayerCommand";
@@ -64,6 +67,7 @@ export class CreateStickerVideoLayerCommand implements ICommand {
     );
 
     DataStore.getInstance().setStore("activeThingId", nextLayer.id);
+    syncLayerBoundingBoxesByActiveThingId(nextLayer.id, this.sceneStateId);
     if (this.previousActiveThingId !== null) {
       touchThingsById(this.previousActiveThingId);
     }
@@ -97,6 +101,10 @@ export class CreateStickerVideoLayerCommand implements ICommand {
     DataStore.getInstance().setStore(
       "activeThingId",
       this.previousActiveThingId,
+    );
+    syncLayerBoundingBoxesByActiveThingId(
+      this.previousActiveThingId,
+      this.sceneStateId,
     );
     if (this.previousActiveThingId !== null) {
       touchThingsById(this.previousActiveThingId);
