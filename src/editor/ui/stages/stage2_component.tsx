@@ -25,6 +25,7 @@ class Stage2 extends KTUComponent {
   private manifest: StickersManifest | null = null;
   private selectedCategoryId = "";
   private loadingState: "loading" | "ready" | "error" = "loading";
+  private uploadStatusMessage = "";
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -101,6 +102,22 @@ class Stage2 extends KTUComponent {
               {selectedCategory && selectedCategory.assets.length === 0 && (
                 <div class="stickers-menu-status">
                   No assets in {selectedCategory.label}.
+                </div>
+              )}
+              <div class="stickers-upload-row">
+                <label class="stickers-upload-label" for="sticker-upload-input">
+                  Upload sticker image
+                </label>
+                <input
+                  id="sticker-upload-input"
+                  type="file"
+                  accept="image/*"
+                  onchange={(event) => this.onStickerUploadChange(event)}
+                />
+              </div>
+              {this.uploadStatusMessage && (
+                <div class="stickers-menu-status">
+                  {this.uploadStatusMessage}
                 </div>
               )}
             </>
@@ -215,6 +232,48 @@ class Stage2 extends KTUComponent {
     }
 
     executeCommand(new CreateStickerVideoLayerCommand(assetPath));
+  }
+
+  private onStickerUploadChange(event: Event) {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      this.uploadStatusMessage = "Please choose an image file.";
+      this.reRender();
+      if (input) {
+        input.value = "";
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string" || !result) {
+        this.uploadStatusMessage = "Could not read the selected image.";
+        this.reRender();
+        return;
+      }
+
+      this.uploadStatusMessage = `Uploaded ${file.name}`;
+      this.createStickerLayer(result);
+      this.reRender();
+    };
+
+    reader.onerror = () => {
+      this.uploadStatusMessage = "Could not read the selected image.";
+      this.reRender();
+    };
+
+    reader.readAsDataURL(file);
+
+    if (input) {
+      input.value = "";
+    }
   }
 
   private getActiveStickerLayer(): LayerState | null {

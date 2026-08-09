@@ -417,6 +417,25 @@ code {
   gap: 8px;
 }
 
+.stickers-upload-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stickers-upload-label {
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.stickers-upload-row input[type="file"] {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 8px 10px;
+}
+
 .sticker-thumb {
   border: 1px solid var(--border);
   border-radius: 8px;
