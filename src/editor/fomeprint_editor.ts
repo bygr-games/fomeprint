@@ -9,10 +9,12 @@ import { NewStateCommand } from "./commands/new_state_command";
 import { EditorUIComponent } from "./ui/editor_ui";
 import { GestureManager } from "./managers/gesture_manager";
 import { MouseManager } from "./managers/mouse_manager";
+import { TouchManager } from "./managers/touch_manager";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
   uiContainer: HTMLElement;
+  private readonly mouseManager: MouseManager;
 
   private getPaperAspectRatio(): number {
     const ratio = Number(
@@ -67,7 +69,7 @@ export class FomeprintEditor {
     );
     this.canvasContainer = canvasContainer;
     this.uiContainer = uiContainer;
-    new MouseManager("editorScene");
+    this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
     DataStore.getInstance().setStore("fomeprint.stage", 1);
@@ -80,7 +82,9 @@ export class FomeprintEditor {
       }),
     );
     this.uiContainer.appendChild(EditorUIComponent({}));
-    if (!GestureManager.hasSeveralTouchPoints()) {
+    if (TouchManager.hasSeveralTouchPoints()) {
+      new TouchManager("editorScene", () => this.mouseManager.resetDragState());
+    } else {
       new GestureManager(this.canvasContainer, "editorScene");
     }
     window.addEventListener("resize", this.fitCanvasToViewport);
