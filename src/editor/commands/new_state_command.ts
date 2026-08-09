@@ -40,6 +40,7 @@ export class NewStateCommand implements ICommand {
 
     const cameraLayer = CameraLayer.getDefaultState("editorScene");
     cameraLayer.hFlip = true;
+    cameraLayer.fillCanvas = true;
     cameraLayer.shaders = [adjustmentShader];
 
     const ditheringShader = BayerDitheringShader.getDefaultState("editorScene");
