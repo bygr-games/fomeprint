@@ -2,29 +2,17 @@ import {
   DataStore,
   EventDispatcher,
   RedViewerComponent,
-  type DisplayLayerState,
   type SceneState,
 } from "fra.ktu.red-component";
 import { executeCommand } from "../ktu/helpers/commands_manager";
 import { NewStateCommand } from "./commands/new_state_command";
 import { EditorUIComponent } from "./ui/editor_ui";
-import { SetLayerFieldCommand } from "./commands/layers/set_layer_field_command";
+import { GestureManager } from "./managers/gesture_manager";
 import { MouseManager } from "./managers/mouse_manager";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
   uiContainer: HTMLElement;
-  private activeTouchPointers = new Map<number, { x: number; y: number }>();
-  private pinchLayerId: number | null = null;
-  private pinchStartDistance: number | null = null;
-  private pinchStartScale: number | null = null;
-  private isControlKeyPressed = false;
-  private isTouchGestureActive = false;
-  private readonly mouseManager: MouseManager;
-
-  private static readonly MIN_LAYER_SCALE = 0.05;
-  private static readonly MAX_LAYER_SCALE = 8;
-  private static readonly WHEEL_ROTATION_SENSITIVITY = 0.01;
 
   private getPaperAspectRatio(): number {
     const ratio = Number(
@@ -72,362 +60,6 @@ export class FomeprintEditor {
     application?.resize?.();
   };
 
-  private getActiveScalableLayer():
-    | (DisplayLayerState & { scale?: number })
-    | undefined {
-    const activeThingId = Number(
-      DataStore.getInstance().getStore("activeThingId"),
-    );
-    if (!Number.isFinite(activeThingId)) {
-      return undefined;
-    }
-
-    const layers = DataStore.getInstance().getStore(
-      "editorScene.layers",
-    ) as DisplayLayerState[];
-    const layer = layers.find((item) => item.id === activeThingId) as
-      | (DisplayLayerState & { scale?: number })
-      | undefined;
-
-    if (!layer || typeof layer.scale !== "number") {
-      return undefined;
-    }
-
-    return layer;
-  }
-
-  private resetPinchState(): void {
-    this.pinchLayerId = null;
-    this.pinchStartDistance = null;
-    this.pinchStartScale = null;
-  }
-
-  private getActivePinchPoints(): Array<{ x: number; y: number }> {
-    const sorted = Array.from(this.activeTouchPointers.entries()).sort(
-      (left, right) => left[0] - right[0],
-    );
-    return sorted.map((entry) => entry[1]);
-  }
-
-  private getPinchDistance(): number | null {
-    const points = this.getActivePinchPoints();
-    if (points.length < 2) {
-      return null;
-    }
-
-    const first = points[0];
-    const second = points[1];
-    return Math.hypot(second.x - first.x, second.y - first.y);
-  }
-
-  private maybeBeginPinch(): void {
-    if (this.activeTouchPointers.size < 2 || this.pinchLayerId !== null) {
-      return;
-    }
-
-    const layer = this.getActiveScalableLayer();
-    const distance = this.getPinchDistance();
-
-    if (!layer || !distance || distance <= 0) {
-      return;
-    }
-
-    this.pinchLayerId = layer.id;
-    this.pinchStartScale = layer.scale as number;
-    this.pinchStartDistance = distance;
-
-    // Prevent pan gestures from fighting pinch scale updates.
-    this.mouseManager.resetDragState();
-  }
-
-  private maybeUpdatePinchScale(): void {
-    if (
-      this.pinchLayerId === null ||
-      this.pinchStartDistance === null ||
-      this.pinchStartScale === null
-    ) {
-      return;
-    }
-
-    const distance = this.getPinchDistance();
-    if (!distance || distance <= 0) {
-      return;
-    }
-
-    const layers = DataStore.getInstance().getStore(
-      "editorScene.layers",
-    ) as DisplayLayerState[];
-    const layer = layers.find((item) => item.id === this.pinchLayerId) as
-      | (DisplayLayerState & { scale?: number })
-      | undefined;
-    if (!layer || typeof layer.scale !== "number") {
-      this.resetPinchState();
-      return;
-    }
-
-    const factor = distance / this.pinchStartDistance;
-    const unclampedScale = this.pinchStartScale * factor;
-    const nextScale = Math.min(
-      FomeprintEditor.MAX_LAYER_SCALE,
-      Math.max(FomeprintEditor.MIN_LAYER_SCALE, unclampedScale),
-    );
-
-    if (Math.abs(nextScale - layer.scale) < 0.0001) {
-      return;
-    }
-
-    executeCommand(new SetLayerFieldCommand(layer.id, "scale", nextScale));
-    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
-  }
-
-  private applyLayerRotationDelta(layerId: number, deltaRadians: number): void {
-    if (!Number.isFinite(deltaRadians) || Math.abs(deltaRadians) < 0.0001) {
-      return;
-    }
-
-    const layers = DataStore.getInstance().getStore(
-      "editorScene.layers",
-    ) as DisplayLayerState[];
-    const layer = layers.find((item) => item.id === layerId) as
-      | (DisplayLayerState & { rotation?: number })
-      | undefined;
-    if (!layer) {
-      return;
-    }
-
-    const currentRotation =
-      typeof layer.rotation === "number" ? layer.rotation : 0;
-    const nextRotation = currentRotation + deltaRadians;
-
-    executeCommand(
-      new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
-    );
-    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
-  }
-
-  private applyLayerScaleDelta(layerId: number, factor: number): void {
-    if (!Number.isFinite(factor) || factor <= 0) {
-      return;
-    }
-
-    const layers = DataStore.getInstance().getStore(
-      "editorScene.layers",
-    ) as DisplayLayerState[];
-    const layer = layers.find((item) => item.id === layerId) as
-      | (DisplayLayerState & { scale?: number })
-      | undefined;
-    if (!layer || typeof layer.scale !== "number") {
-      return;
-    }
-
-    const nextScale = Math.min(
-      FomeprintEditor.MAX_LAYER_SCALE,
-      Math.max(FomeprintEditor.MIN_LAYER_SCALE, layer.scale * factor),
-    );
-
-    if (Math.abs(nextScale - layer.scale) < 0.0001) {
-      return;
-    }
-
-    executeCommand(new SetLayerFieldCommand(layer.id, "scale", nextScale));
-    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
-  }
-
-  private bindKeyboardModifierHandlers(): void {
-    window.addEventListener("keydown", (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        this.isControlKeyPressed = true;
-      }
-    });
-
-    window.addEventListener("keyup", (event: KeyboardEvent) => {
-      if (event.key === "Control") {
-        this.isControlKeyPressed = false;
-      }
-    });
-
-    window.addEventListener("blur", () => {
-      this.isControlKeyPressed = false;
-    });
-  }
-
-  private bindTrackpadPinchHandlers(): void {
-    const onWheel = (event: WheelEvent) => {
-      const path =
-        typeof event.composedPath === "function" ? event.composedPath() : [];
-      const isOverCanvas =
-        path.includes(this.canvasContainer) ||
-        this.canvasContainer.contains(event.target as Node);
-
-      if (!isOverCanvas) {
-        return;
-      }
-
-      // On desktop touchpads, pinch commonly arrives as ctrl+wheel.
-      if (!event.ctrlKey) {
-        return;
-      }
-
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-
-      const layer = this.getActiveScalableLayer();
-      if (!layer) {
-        return;
-      }
-
-      if (this.isControlKeyPressed) {
-        const rotationDelta =
-          -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY;
-        this.applyLayerRotationDelta(layer.id, rotationDelta);
-      } else {
-        const zoomFactor = Math.exp(
-          -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY,
-        );
-        this.applyLayerScaleDelta(layer.id, zoomFactor);
-      }
-    };
-
-    // Capture phase gives us first chance to stop browser page zoom.
-    window.addEventListener("wheel", onWheel, {
-      passive: false,
-      capture: true,
-    });
-  }
-
-  private bindPinchToZoomHandlers(): void {
-    const onPointerDown = (event: PointerEvent) => {
-      if (this.isTouchGestureActive) {
-        return;
-      }
-      if (event.pointerType !== "touch") {
-        return;
-      }
-
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-
-      this.activeTouchPointers.set(event.pointerId, {
-        x: event.clientX,
-        y: event.clientY,
-      });
-      this.maybeBeginPinch();
-    };
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (this.isTouchGestureActive) {
-        return;
-      }
-      if (event.pointerType !== "touch") {
-        return;
-      }
-
-      if (!this.activeTouchPointers.has(event.pointerId)) {
-        return;
-      }
-
-      this.activeTouchPointers.set(event.pointerId, {
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      if (this.activeTouchPointers.size >= 2) {
-        if (event.cancelable) {
-          event.preventDefault();
-        }
-        this.maybeBeginPinch();
-        this.maybeUpdatePinchScale();
-      }
-    };
-
-    const onPointerEnd = (event: PointerEvent) => {
-      if (this.isTouchGestureActive) {
-        return;
-      }
-      this.activeTouchPointers.delete(event.pointerId);
-      if (this.activeTouchPointers.size < 2) {
-        this.resetPinchState();
-      }
-    };
-
-    const syncPointersFromTouches = (touches: TouchList) => {
-      this.activeTouchPointers.clear();
-      for (let i = 0; i < touches.length; i++) {
-        const touch = touches.item(i);
-        if (!touch) {
-          continue;
-        }
-        this.activeTouchPointers.set(touch.identifier, {
-          x: touch.clientX,
-          y: touch.clientY,
-        });
-      }
-    };
-
-    const onTouchStart = (event: TouchEvent) => {
-      this.isTouchGestureActive = true;
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-      syncPointersFromTouches(event.touches);
-      this.maybeBeginPinch();
-    };
-
-    const onTouchMove = (event: TouchEvent) => {
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-      syncPointersFromTouches(event.touches);
-      if (this.activeTouchPointers.size >= 2) {
-        this.maybeBeginPinch();
-        this.maybeUpdatePinchScale();
-      }
-    };
-
-    const onTouchEnd = (event: TouchEvent) => {
-      syncPointersFromTouches(event.touches);
-      if (this.activeTouchPointers.size < 2) {
-        this.resetPinchState();
-      }
-      if (event.touches.length === 0) {
-        this.isTouchGestureActive = false;
-      }
-    };
-
-    const preventGestureEvent = (event: Event) => {
-      if (event.cancelable) {
-        event.preventDefault();
-      }
-    };
-
-    this.canvasContainer.addEventListener("pointerdown", onPointerDown, {
-      passive: false,
-    });
-    window.addEventListener("pointermove", onPointerMove, { passive: false });
-    window.addEventListener("pointerup", onPointerEnd, { passive: true });
-    window.addEventListener("pointercancel", onPointerEnd, { passive: true });
-
-    // TouchEvent fallback for browsers where multi-touch pointer events are unreliable.
-    this.canvasContainer.addEventListener("touchstart", onTouchStart, {
-      passive: false,
-    });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
-
-    // Safari may still emit gesture events for page zoom unless canceled.
-    this.canvasContainer.addEventListener("gesturestart", preventGestureEvent, {
-      passive: false,
-    } as AddEventListenerOptions);
-    this.canvasContainer.addEventListener(
-      "gesturechange",
-      preventGestureEvent,
-      { passive: false } as AddEventListenerOptions,
-    );
-  }
-
   public constructor(canvasContainer: HTMLElement, uiContainer: HTMLElement) {
     console.log(
       "Initializing FomeprintEditor with autosaved state:",
@@ -435,7 +67,7 @@ export class FomeprintEditor {
     );
     this.canvasContainer = canvasContainer;
     this.uiContainer = uiContainer;
-    this.mouseManager = new MouseManager("editorScene");
+    new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
     DataStore.getInstance().setStore("fomeprint.stage", 1);
@@ -448,9 +80,9 @@ export class FomeprintEditor {
       }),
     );
     this.uiContainer.appendChild(EditorUIComponent({}));
-    this.bindKeyboardModifierHandlers();
-    this.bindPinchToZoomHandlers();
-    this.bindTrackpadPinchHandlers();
+    if (!GestureManager.hasSeveralTouchPoints()) {
+      new GestureManager(this.canvasContainer, "editorScene");
+    }
     window.addEventListener("resize", this.fitCanvasToViewport);
 
     EventDispatcher.getInstance().addEventListener(
