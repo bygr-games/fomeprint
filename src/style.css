@@ -435,6 +435,17 @@ code {
   object-fit: contain;
 }
 
+.stage2-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage2-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .stage3-print-panel {
   display: flex;
   flex-direction: column;

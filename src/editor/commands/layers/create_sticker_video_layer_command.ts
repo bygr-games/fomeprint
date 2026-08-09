@@ -48,6 +48,7 @@ export class CreateStickerVideoLayerCommand implements ICommand {
     nextLayer.imageHash = imageHash;
     nextLayer.scale = 0.35;
     nextLayer.shaders = [outerStrokeShader];
+    (nextLayer as Record<string, unknown>).sourceType = "sticker";
 
     this.createdLayerId = nextLayer.id;
 

@@ -1,8 +1,14 @@
 import jsx from "texsaur";
-import { KTUComponent } from "fra.ktu.red-component";
+import {
+  DataStore,
+  KTUComponent,
+  type LayerState,
+  type SceneState,
+} from "fra.ktu.red-component";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
+import { DeleteLayerCommand } from "../../commands/layers/delete_layer_command";
 
 type StickerCategory = {
   id: string;
@@ -20,7 +26,8 @@ class Stage2 extends KTUComponent {
   private loadingState: "loading" | "ready" | "error" = "loading";
 
   constructor(props: { binding?: string }) {
-    super({ binding: props.binding ?? "fomeprint.stage" });
+    const baseBinding = props.binding ?? "fomeprint.stage";
+    super({ binding: `${baseBinding},activeThingId,editorScene.layers` });
     void this.loadManifest();
   }
 
@@ -43,6 +50,8 @@ class Stage2 extends KTUComponent {
     const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
     const categories = this.manifest?.categories ?? [];
     const selectedCategory = this.getSelectedCategory();
+    const activeStickerLayer = this.getActiveStickerLayer();
+    const canDeleteActiveSticker = activeStickerLayer !== null;
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
@@ -96,9 +105,19 @@ class Stage2 extends KTUComponent {
             </>
           )}
         </div>
-        <button type="button" onclick={() => this.goToThirdStage()}>
-          Next
-        </button>
+        <div class="stage2-actions">
+          <button
+            type="button"
+            class="stage2-delete-button"
+            onclick={() => this.deleteActiveStickerLayer()}
+            disabled={!canDeleteActiveSticker}
+          >
+            Delete Active Sticker
+          </button>
+          <button type="button" onclick={() => this.goToThirdStage()}>
+            Next
+          </button>
+        </div>
       </div>
     );
   }
@@ -192,6 +211,60 @@ class Stage2 extends KTUComponent {
     }
 
     executeCommand(new CreateStickerVideoLayerCommand(assetPath));
+  }
+
+  private getActiveStickerLayer(): LayerState | null {
+    const scene = DataStore.getInstance().getStore("editorScene") as
+      | SceneState
+      | undefined;
+    if (!scene) {
+      return null;
+    }
+
+    const activeThingId = Number(
+      DataStore.getInstance().getStore("activeThingId"),
+    );
+    if (!Number.isFinite(activeThingId)) {
+      return null;
+    }
+
+    const activeLayer = scene.layers.find(
+      (layer) => layer.id === activeThingId,
+    );
+    if (!activeLayer) {
+      return null;
+    }
+
+    const sourceType = (activeLayer as Record<string, unknown>).sourceType;
+    if (sourceType === "sticker") {
+      return activeLayer;
+    }
+
+    const shaders = (activeLayer as Record<string, unknown>).shaders;
+    if (Array.isArray(shaders)) {
+      const hasStickerStroke = shaders.some((shader) => {
+        const shaderRecord = shader as Record<string, unknown>;
+        const type = String(shaderRecord.type ?? "").toLowerCase();
+        const thickness = Number(shaderRecord.thickness);
+        const color = String(shaderRecord.color ?? "").toLowerCase();
+        return type.includes("outer") && thickness === 6 && color === "#ffffff";
+      });
+
+      if (hasStickerStroke) {
+        return activeLayer;
+      }
+    }
+
+    return null;
+  }
+
+  private deleteActiveStickerLayer() {
+    const activeStickerLayer = this.getActiveStickerLayer();
+    if (!activeStickerLayer) {
+      return;
+    }
+
+    executeCommand(new DeleteLayerCommand(activeStickerLayer.id));
   }
 }
 
