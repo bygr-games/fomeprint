@@ -14,6 +14,11 @@ type RuntimeLayer = {
   id: number;
   mainSprite?: {
     visible?: boolean;
+    texture?: {
+      source?: {
+        resource?: HTMLVideoElement;
+      };
+    };
   };
 };
 
@@ -67,10 +72,11 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         return;
       }
 
-      const base64Frame = await this.captureCameraFrameScaledToViewport(
+      const base64Frame = await this.captureFullCameraFrame(
+        cameraLayer,
+        runtimeCameraLayer,
         application,
         runtimeLayers,
-        cameraLayer.id,
       );
 
       const imageHash = cacheAsset(this.sceneStateId, base64Frame);
@@ -182,5 +188,78 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         }
       }
     }
+  }
+
+  private async captureFullCameraFrame(
+    cameraLayer: CameraLayerState,
+    runtimeCameraLayer: RuntimeLayer,
+    application: Application,
+    runtimeLayers: RuntimeLayer[] | undefined,
+  ): Promise<string> {
+    const videoElement = runtimeCameraLayer.mainSprite?.texture?.source
+      ?.resource;
+
+    const width = Math.max(
+      1,
+      Math.round(
+        Number(
+          videoElement?.videoWidth ??
+            (videoElement as { naturalWidth?: number } | undefined)
+              ?.naturalWidth ??
+            videoElement?.width ??
+            0,
+        ),
+      ),
+    );
+    const height = Math.max(
+      1,
+      Math.round(
+        Number(
+          videoElement?.videoHeight ??
+            (videoElement as { naturalHeight?: number } | undefined)
+              ?.naturalHeight ??
+            videoElement?.height ??
+            0,
+        ),
+      ),
+    );
+
+    if (!videoElement || width <= 1 || height <= 1) {
+      return this.captureCameraFrameScaledToViewport(
+        application,
+        runtimeLayers,
+        cameraLayer.id,
+      );
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return this.captureCameraFrameScaledToViewport(
+        application,
+        runtimeLayers,
+        cameraLayer.id,
+      );
+    }
+
+    context.save();
+
+    if (cameraLayer.hFlip) {
+      context.translate(width, 0);
+      context.scale(-1, 1);
+    }
+
+    if (cameraLayer.vFlip) {
+      context.translate(0, height);
+      context.scale(1, -1);
+    }
+
+    context.drawImage(videoElement, 0, 0, width, height);
+    context.restore();
+
+    return canvas.toDataURL("image/png");
   }
 }
