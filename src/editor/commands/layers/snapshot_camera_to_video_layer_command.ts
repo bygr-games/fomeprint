@@ -196,8 +196,8 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
     application: Application,
     runtimeLayers: RuntimeLayer[] | undefined,
   ): Promise<string> {
-    const videoElement = runtimeCameraLayer.mainSprite?.texture?.source
-      ?.resource;
+    const videoElement =
+      runtimeCameraLayer.mainSprite?.texture?.source?.resource;
 
     const width = Math.max(
       1,

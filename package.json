@@ -2,6 +2,7 @@
   "name": "fomeprint",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "bun@1.2.21",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +16,7 @@
     "vite": "^8.2.0"
   },
   "dependencies": {
+    "fra.ktu.red-component": "alpha",
     "sharp": "^0.34.4"
   }
 }
