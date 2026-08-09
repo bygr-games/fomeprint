@@ -31,6 +31,10 @@ export class FomeprintEditor {
   private static readonly MAX_LAYER_SCALE = 8;
   private static readonly WHEEL_ROTATION_SENSITIVITY = 0.01;
 
+  private radiansToDegrees(radians: number): number {
+    return (radians * 180) / Math.PI;
+  }
+
   private getPaperAspectRatio(): number {
     const ratio = Number(
       DataStore.getInstance().getStore("fomeprint.paperAspectRatio"),
@@ -153,6 +157,12 @@ export class FomeprintEditor {
     const angle = this.getPinchAngle();
 
     if (!layer || !distance || distance <= 0 || angle === null) {
+      console.log("[mobile-pinch] begin skipped", {
+        hasLayer: !!layer,
+        distance,
+        angle,
+        pointerCount: this.activeTouchPointers.size,
+      });
       return;
     }
 
@@ -165,6 +175,16 @@ export class FomeprintEditor {
         ? ((layer as { rotation?: number }).rotation as number)
         : 0;
     this.pinchLastAngle = angle;
+
+    console.log("[mobile-pinch] begin", {
+      layerId: layer.id,
+      startDistance: distance,
+      startAngleRad: angle,
+      startAngleDeg: this.radiansToDegrees(angle),
+      startScale: this.pinchStartScale,
+      startRotation: this.pinchStartRotation,
+      pointerCount: this.activeTouchPointers.size,
+    });
 
     // Prevent pan gestures from fighting pinch scale updates.
     this.draggingLayerId = null;
@@ -219,11 +239,18 @@ export class FomeprintEditor {
       this.pinchStartRotation === null ||
       this.pinchLastAngle === null
     ) {
+      console.log("[mobile-pinch] rotation skipped: missing state", {
+        pinchLayerId: this.pinchLayerId,
+        pinchStartAngle: this.pinchStartAngle,
+        pinchStartRotation: this.pinchStartRotation,
+        pinchLastAngle: this.pinchLastAngle,
+      });
       return;
     }
 
     const angle = this.getPinchAngle();
     if (angle === null) {
+      console.log("[mobile-pinch] rotation skipped: no angle");
       return;
     }
 
@@ -234,14 +261,33 @@ export class FomeprintEditor {
       | (DisplayLayerState & { rotation?: number })
       | undefined;
     if (!layer) {
+      console.log("[mobile-pinch] rotation skipped: layer not found", {
+        pinchLayerId: this.pinchLayerId,
+      });
       return;
     }
 
     const delta = this.normalizeAngleDelta(angle - this.pinchLastAngle);
     this.pinchLastAngle = angle;
     if (Math.abs(delta) < 0.0001) {
+      console.log("[mobile-pinch] rotation delta too small", {
+        layerId: layer.id,
+        angleRad: angle,
+        angleDeg: this.radiansToDegrees(angle),
+        deltaRad: delta,
+        deltaDeg: this.radiansToDegrees(delta),
+      });
       return;
     }
+
+    console.log("[mobile-pinch] apply rotation delta", {
+      layerId: layer.id,
+      angleRad: angle,
+      angleDeg: this.radiansToDegrees(angle),
+      deltaRad: delta,
+      deltaDeg: this.radiansToDegrees(delta),
+      currentRotation: layer.rotation,
+    });
 
     this.applyLayerRotationDelta(layer.id, delta);
   }
@@ -258,12 +304,24 @@ export class FomeprintEditor {
       | (DisplayLayerState & { rotation?: number })
       | undefined;
     if (!layer) {
+      console.log("[mobile-pinch] apply rotation skipped: layer not found", {
+        layerId,
+      });
       return;
     }
 
     const currentRotation =
       typeof layer.rotation === "number" ? layer.rotation : 0;
     const nextRotation = currentRotation + deltaRadians;
+    console.log("[mobile-pinch] set rotation", {
+      layerId,
+      fromRad: currentRotation,
+      fromDeg: this.radiansToDegrees(currentRotation),
+      deltaRad: deltaRadians,
+      deltaDeg: this.radiansToDegrees(deltaRadians),
+      toRad: nextRotation,
+      toDeg: this.radiansToDegrees(nextRotation),
+    });
     executeCommand(
       new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
     );
@@ -440,6 +498,10 @@ export class FomeprintEditor {
         event.preventDefault();
       }
       syncPointersFromTouches(event.touches);
+      console.log("[mobile-pinch] touchstart", {
+        touches: event.touches.length,
+        pointerCount: this.activeTouchPointers.size,
+      });
       this.maybeBeginPinch();
     };
 
@@ -448,6 +510,15 @@ export class FomeprintEditor {
         event.preventDefault();
       }
       syncPointersFromTouches(event.touches);
+      const angle = this.getPinchAngle();
+      const distance = this.getPinchDistance();
+      console.log("[mobile-pinch] touchmove", {
+        touches: event.touches.length,
+        pointerCount: this.activeTouchPointers.size,
+        angleRad: angle,
+        angleDeg: angle === null ? null : this.radiansToDegrees(angle),
+        distance,
+      });
       if (this.activeTouchPointers.size >= 2) {
         this.maybeBeginPinch();
         this.maybeUpdatePinchScale();
