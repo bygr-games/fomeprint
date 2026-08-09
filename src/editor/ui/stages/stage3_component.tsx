@@ -136,6 +136,9 @@ class Stage3 extends KTUComponent {
             <button type="button" onclick={() => this.resetState()}>
               Reset
             </button>
+            <button type="button" onclick={() => this.handleDownloadButton()}>
+              Download
+            </button>
             <button
               type="button"
               onclick={() => void this.handleConnectButton()}
@@ -379,6 +382,58 @@ class Stage3 extends KTUComponent {
       };
       this.reRender();
     }
+  }
+
+  private handleDownloadButton(): void {
+    const canvas = document.querySelector(
+      "#canvasContainer canvas",
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+      this.printerStatus = {
+        ...this.printerStatus,
+        message: "Could not find preview canvas to download.",
+      };
+      this.reRender();
+      return;
+    }
+
+    const fileName = this.buildDownloadFileName();
+    canvas.toBlob((blob) => {
+      if (blob) {
+        this.downloadBlob(blob, fileName);
+        return;
+      }
+
+      this.downloadDataUrl(canvas.toDataURL("image/png"), fileName);
+    }, "image/png");
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    const objectUrl = URL.createObjectURL(blob);
+    this.downloadDataUrl(objectUrl, fileName);
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+  }
+
+  private downloadDataUrl(dataUrl: string, fileName: string): void {
+    const anchor = document.createElement("a");
+    anchor.href = dataUrl;
+    anchor.download = fileName;
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
+  private buildDownloadFileName(): string {
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const timestamp = [
+      `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`,
+      `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`,
+    ].join("-");
+
+    return `fomeprint-${timestamp}.png`;
   }
 
   private resetState() {
