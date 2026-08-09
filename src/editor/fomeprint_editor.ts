@@ -8,32 +8,23 @@ import {
 import { executeCommand } from "../ktu/helpers/commands_manager";
 import { NewStateCommand } from "./commands/new_state_command";
 import { EditorUIComponent } from "./ui/editor_ui";
-import { ActivateThingCommand } from "./commands/activate_thing_command";
 import { SetLayerFieldCommand } from "./commands/layers/set_layer_field_command";
+import { MouseManager } from "./managers/mouse_manager";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
   uiContainer: HTMLElement;
-  private draggingLayerId: number | null = null;
-  private lastDragX: number | null = null;
-  private lastDragY: number | null = null;
   private activeTouchPointers = new Map<number, { x: number; y: number }>();
   private pinchLayerId: number | null = null;
   private pinchStartDistance: number | null = null;
   private pinchStartScale: number | null = null;
-  private pinchStartAngle: number | null = null;
-  private pinchStartRotation: number | null = null;
-  private pinchLastAngle: number | null = null;
   private isControlKeyPressed = false;
   private isTouchGestureActive = false;
+  private readonly mouseManager: MouseManager;
 
   private static readonly MIN_LAYER_SCALE = 0.05;
   private static readonly MAX_LAYER_SCALE = 8;
   private static readonly WHEEL_ROTATION_SENSITIVITY = 0.01;
-
-  private radiansToDegrees(radians: number): number {
-    return (radians * 180) / Math.PI;
-  }
 
   private getPaperAspectRatio(): number {
     const ratio = Number(
@@ -109,9 +100,6 @@ export class FomeprintEditor {
     this.pinchLayerId = null;
     this.pinchStartDistance = null;
     this.pinchStartScale = null;
-    this.pinchStartAngle = null;
-    this.pinchStartRotation = null;
-    this.pinchLastAngle = null;
   }
 
   private getActivePinchPoints(): Array<{ x: number; y: number }> {
@@ -132,21 +120,6 @@ export class FomeprintEditor {
     return Math.hypot(second.x - first.x, second.y - first.y);
   }
 
-  private getPinchAngle(): number | null {
-    const points = this.getActivePinchPoints();
-    if (points.length < 2) {
-      return null;
-    }
-
-    const first = points[0];
-    const second = points[1];
-    return Math.atan2(second.y - first.y, second.x - first.x);
-  }
-
-  private normalizeAngleDelta(delta: number): number {
-    return Math.atan2(Math.sin(delta), Math.cos(delta));
-  }
-
   private maybeBeginPinch(): void {
     if (this.activeTouchPointers.size < 2 || this.pinchLayerId !== null) {
       return;
@@ -154,42 +127,17 @@ export class FomeprintEditor {
 
     const layer = this.getActiveScalableLayer();
     const distance = this.getPinchDistance();
-    const angle = this.getPinchAngle();
 
-    if (!layer || !distance || distance <= 0 || angle === null) {
-      console.log("[mobile-pinch] begin skipped", {
-        hasLayer: !!layer,
-        distance,
-        angle,
-        pointerCount: this.activeTouchPointers.size,
-      });
+    if (!layer || !distance || distance <= 0) {
       return;
     }
 
     this.pinchLayerId = layer.id;
     this.pinchStartScale = layer.scale as number;
     this.pinchStartDistance = distance;
-    this.pinchStartAngle = angle;
-    this.pinchStartRotation =
-      typeof (layer as { rotation?: number }).rotation === "number"
-        ? ((layer as { rotation?: number }).rotation as number)
-        : 0;
-    this.pinchLastAngle = angle;
-
-    console.log("[mobile-pinch] begin", {
-      layerId: layer.id,
-      startDistance: distance,
-      startAngleRad: angle,
-      startAngleDeg: this.radiansToDegrees(angle),
-      startScale: this.pinchStartScale,
-      startRotation: this.pinchStartRotation,
-      pointerCount: this.activeTouchPointers.size,
-    });
 
     // Prevent pan gestures from fighting pinch scale updates.
-    this.draggingLayerId = null;
-    this.lastDragX = null;
-    this.lastDragY = null;
+    this.mouseManager.resetDragState();
   }
 
   private maybeUpdatePinchScale(): void {
@@ -232,66 +180,6 @@ export class FomeprintEditor {
     DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
   }
 
-  private maybeUpdatePinchRotation(): void {
-    if (
-      this.pinchLayerId === null ||
-      this.pinchStartAngle === null ||
-      this.pinchStartRotation === null ||
-      this.pinchLastAngle === null
-    ) {
-      console.log("[mobile-pinch] rotation skipped: missing state", {
-        pinchLayerId: this.pinchLayerId,
-        pinchStartAngle: this.pinchStartAngle,
-        pinchStartRotation: this.pinchStartRotation,
-        pinchLastAngle: this.pinchLastAngle,
-      });
-      return;
-    }
-
-    const angle = this.getPinchAngle();
-    if (angle === null) {
-      console.log("[mobile-pinch] rotation skipped: no angle");
-      return;
-    }
-
-    const layers = DataStore.getInstance().getStore(
-      "editorScene.layers",
-    ) as DisplayLayerState[];
-    const layer = layers.find((item) => item.id === this.pinchLayerId) as
-      | (DisplayLayerState & { rotation?: number })
-      | undefined;
-    if (!layer) {
-      console.log("[mobile-pinch] rotation skipped: layer not found", {
-        pinchLayerId: this.pinchLayerId,
-      });
-      return;
-    }
-
-    const delta = this.normalizeAngleDelta(angle - this.pinchLastAngle);
-    this.pinchLastAngle = angle;
-    if (Math.abs(delta) < 0.0001) {
-      console.log("[mobile-pinch] rotation delta too small", {
-        layerId: layer.id,
-        angleRad: angle,
-        angleDeg: this.radiansToDegrees(angle),
-        deltaRad: delta,
-        deltaDeg: this.radiansToDegrees(delta),
-      });
-      return;
-    }
-
-    console.log("[mobile-pinch] apply rotation delta", {
-      layerId: layer.id,
-      angleRad: angle,
-      angleDeg: this.radiansToDegrees(angle),
-      deltaRad: delta,
-      deltaDeg: this.radiansToDegrees(delta),
-      currentRotation: layer.rotation,
-    });
-
-    this.applyLayerRotationDelta(layer.id, delta);
-  }
-
   private applyLayerRotationDelta(layerId: number, deltaRadians: number): void {
     if (!Number.isFinite(deltaRadians) || Math.abs(deltaRadians) < 0.0001) {
       return;
@@ -304,24 +192,13 @@ export class FomeprintEditor {
       | (DisplayLayerState & { rotation?: number })
       | undefined;
     if (!layer) {
-      console.log("[mobile-pinch] apply rotation skipped: layer not found", {
-        layerId,
-      });
       return;
     }
 
     const currentRotation =
       typeof layer.rotation === "number" ? layer.rotation : 0;
     const nextRotation = currentRotation + deltaRadians;
-    console.log("[mobile-pinch] set rotation", {
-      layerId,
-      fromRad: currentRotation,
-      fromDeg: this.radiansToDegrees(currentRotation),
-      deltaRad: deltaRadians,
-      deltaDeg: this.radiansToDegrees(deltaRadians),
-      toRad: nextRotation,
-      toDeg: this.radiansToDegrees(nextRotation),
-    });
+
     executeCommand(
       new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
     );
@@ -401,12 +278,10 @@ export class FomeprintEditor {
       }
 
       if (this.isControlKeyPressed) {
-        // Desktop/laptop: while physical Ctrl is held, pinch drives rotation.
         const rotationDelta =
           -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY;
         this.applyLayerRotationDelta(layer.id, rotationDelta);
       } else {
-        // Default desktop/laptop pinch behavior: zoom active layer.
         const zoomFactor = Math.exp(
           -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY,
         );
@@ -464,7 +339,6 @@ export class FomeprintEditor {
         }
         this.maybeBeginPinch();
         this.maybeUpdatePinchScale();
-        this.maybeUpdatePinchRotation();
       }
     };
 
@@ -498,10 +372,6 @@ export class FomeprintEditor {
         event.preventDefault();
       }
       syncPointersFromTouches(event.touches);
-      console.log("[mobile-pinch] touchstart", {
-        touches: event.touches.length,
-        pointerCount: this.activeTouchPointers.size,
-      });
       this.maybeBeginPinch();
     };
 
@@ -510,19 +380,9 @@ export class FomeprintEditor {
         event.preventDefault();
       }
       syncPointersFromTouches(event.touches);
-      const angle = this.getPinchAngle();
-      const distance = this.getPinchDistance();
-      console.log("[mobile-pinch] touchmove", {
-        touches: event.touches.length,
-        pointerCount: this.activeTouchPointers.size,
-        angleRad: angle,
-        angleDeg: angle === null ? null : this.radiansToDegrees(angle),
-        distance,
-      });
       if (this.activeTouchPointers.size >= 2) {
         this.maybeBeginPinch();
         this.maybeUpdatePinchScale();
-        this.maybeUpdatePinchRotation();
       }
     };
 
@@ -575,6 +435,7 @@ export class FomeprintEditor {
     );
     this.canvasContainer = canvasContainer;
     this.uiContainer = uiContainer;
+    this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
     DataStore.getInstance().setStore("fomeprint.stage", 1);
@@ -623,150 +484,6 @@ export class FomeprintEditor {
         const application = DataStore.getInstance().getStore("application");
         application.resize();
         DataStore.getInstance().touchIds("editorScene");
-      },
-    );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene",
-      "layerClick",
-      (payload: { layerId?: number | string; x?: number; y?: number }) => {
-        console.log("[drag] layerClick payload", payload);
-        const layerId = Number(payload?.layerId);
-        if (!Number.isFinite(layerId)) {
-          console.log(
-            "[drag] ignored click: invalid layerId",
-            payload?.layerId,
-          );
-          return;
-        }
-        this.draggingLayerId = layerId;
-        this.lastDragX = Number.isFinite(payload?.x as number)
-          ? Number(payload?.x)
-          : null;
-        this.lastDragY = Number.isFinite(payload?.y as number)
-          ? Number(payload?.y)
-          : null;
-        console.log("[drag] start", {
-          layerId: this.draggingLayerId,
-          lastDragX: this.lastDragX,
-          lastDragY: this.lastDragY,
-        });
-        executeCommand(new ActivateThingCommand(layerId));
-      },
-    );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene",
-      "layerClickRelease",
-      () => {
-        console.log("[drag] release", {
-          layerId: this.draggingLayerId,
-          lastDragX: this.lastDragX,
-          lastDragY: this.lastDragY,
-        });
-        this.draggingLayerId = null;
-        this.lastDragX = null;
-        this.lastDragY = null;
-      },
-    );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene",
-      "mouseMove",
-      (payload: { layerId?: number | string; x?: number; y?: number }) => {
-        if (this.draggingLayerId === null) {
-          return;
-        }
-
-        console.log("[drag] mouseMove while dragging", {
-          layerId: this.draggingLayerId,
-          payload,
-        });
-
-        const sceneState = DataStore.getInstance().getStore(
-          "editorScene",
-        ) as SceneState;
-        if (!sceneState?.width || !sceneState?.height) {
-          console.log("[drag] aborted: invalid scene dimensions", {
-            width: sceneState?.width,
-            height: sceneState?.height,
-          });
-          return;
-        }
-
-        const layers = DataStore.getInstance().getStore(
-          "editorScene.layers",
-        ) as DisplayLayerState[];
-        const layer = layers.find(
-          (item) => item.id === this.draggingLayerId,
-        ) as (DisplayLayerState & { panX?: number; panY?: number }) | undefined;
-        if (
-          !layer ||
-          typeof layer.panX !== "number" ||
-          typeof layer.panY !== "number"
-        ) {
-          console.log("[drag] aborted: layer missing or no pan fields", {
-            draggingLayerId: this.draggingLayerId,
-            foundLayer: !!layer,
-            panX: layer ? (layer as any).panX : undefined,
-            panY: layer ? (layer as any).panY : undefined,
-          });
-          return;
-        }
-
-        if (this.lastDragX === null || this.lastDragY === null) {
-          const initialX = Number(payload?.x);
-          const initialY = Number(payload?.y);
-          if (!Number.isFinite(initialX) || !Number.isFinite(initialY)) {
-            console.log(
-              "[drag] aborted: invalid initial mouseMove payload",
-              payload,
-            );
-            return;
-          }
-
-          console.log("[drag] priming initial mouse position", {
-            x: initialX,
-            y: initialY,
-          });
-          this.lastDragX = initialX;
-          this.lastDragY = initialY;
-          return;
-        }
-
-        const currentX = Number(payload?.x);
-        const currentY = Number(payload?.y);
-        if (!Number.isFinite(currentX) || !Number.isFinite(currentY)) {
-          console.log("[drag] aborted: invalid mouseMove payload", payload);
-          return;
-        }
-
-        const deltaX = currentX - this.lastDragX;
-        const deltaY = currentY - this.lastDragY;
-        if (deltaX === 0 && deltaY === 0) {
-          console.log("[drag] no movement delta");
-          return;
-        }
-
-        this.lastDragX = currentX;
-        this.lastDragY = currentY;
-
-        const nextPanX = layer.panX + deltaX / sceneState.width;
-        const nextPanY = layer.panY + deltaY / sceneState.height;
-
-        console.log("[drag] applying pan", {
-          layerId: layer.id,
-          deltaX,
-          deltaY,
-          previousPanX: layer.panX,
-          previousPanY: layer.panY,
-          nextPanX,
-          nextPanY,
-        });
-
-        executeCommand(new SetLayerFieldCommand(layer.id, "panX", nextPanX));
-        executeCommand(new SetLayerFieldCommand(layer.id, "panY", nextPanY));
-        DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
       },
     );
   }
