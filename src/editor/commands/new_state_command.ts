@@ -54,7 +54,7 @@ export class NewStateCommand implements ICommand {
       height: 1000,
       duration: 1,
       layers: [
-        BackgroundLayer.getDefaultState("editorScene", "black"),
+        BackgroundLayer.getDefaultState("editorScene", "green"),
         cameraLayer,
       ],
       shaders: [BnwShader.getDefaultState("editorScene"), ditheringShader],

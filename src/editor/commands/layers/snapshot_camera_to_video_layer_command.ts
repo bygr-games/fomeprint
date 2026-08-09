@@ -79,6 +79,7 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       videoLayer.panX = cameraLayer.panX;
       videoLayer.panY = cameraLayer.panY;
       videoLayer.scale = cameraLayer.scale;
+      videoLayer.fillCanvas = cameraLayer.fillCanvas;
       // Flip is baked into the captured pixels, so keep the output layer unflipped.
       videoLayer.hFlip = false;
       videoLayer.vFlip = false;

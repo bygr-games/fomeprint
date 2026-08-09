@@ -249,6 +249,7 @@ class Stage3 extends KTUComponent {
         "fomeprint.paperAspectRatio",
         selected.aspectRatio,
       );
+      this.updateEditorSceneSizeForAspectRatio(selected.aspectRatio);
     }
   }
 
@@ -265,7 +266,31 @@ class Stage3 extends KTUComponent {
       "fomeprint.paperAspectRatio",
       selected.aspectRatio,
     );
+    this.updateEditorSceneSizeForAspectRatio(selected.aspectRatio);
     this.reRender();
+  }
+
+  private updateEditorSceneSizeForAspectRatio(aspectRatio: number) {
+    if (!Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+      return;
+    }
+
+    const viewportWidth = Math.max(1, window.innerWidth);
+    const viewportHeight = Math.max(1, window.innerHeight);
+
+    let width = viewportWidth;
+    let height = Math.round(width / aspectRatio);
+
+    if (height > viewportHeight) {
+      height = viewportHeight;
+      width = Math.round(height * aspectRatio);
+    }
+
+    width = Math.max(1, width);
+    height = Math.max(1, height);
+
+    DataStore.getInstance().setStore("editorScene.width", width);
+    DataStore.getInstance().setStore("editorScene.height", height);
   }
 
   private statusText(): string {
