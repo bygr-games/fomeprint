@@ -29,7 +29,9 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: |
+          bun install
+          bun update fra.ktu.red-component
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
