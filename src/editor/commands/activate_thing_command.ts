@@ -14,6 +14,11 @@ export class ActivateThingCommand implements ICommand {
     this.id = id;
   }
   execute(): void {
+    const stage = Number(DataStore.getInstance().getStore("fomeprint.stage"));
+    if (stage !== 2) {
+      return;
+    }
+
     this.oldId = DataStore.getInstance().getStore("activeThingId");
     if (this.oldId === this.id) {
       return;

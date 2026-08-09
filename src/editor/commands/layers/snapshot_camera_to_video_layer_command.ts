@@ -111,7 +111,7 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         (layer) => layer.id === cameraLayer.id,
       );
       if (cameraLayerIndex >= 0) {
-        sceneState.layers.splice(cameraLayerIndex + 1, 0, videoLayer);
+        sceneState.layers.splice(cameraLayerIndex, 1, videoLayer);
       } else {
         sceneState.layers.push(videoLayer);
       }

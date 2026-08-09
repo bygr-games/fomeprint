@@ -28,6 +28,14 @@ export class MouseManager {
       this.sceneStateId,
       "layerClick",
       (payload: { layerId?: number | string; x?: number; y?: number }) => {
+        const stage = Number(
+          DataStore.getInstance().getStore("fomeprint.stage"),
+        );
+        if (stage !== 2) {
+          this.resetDragState();
+          return;
+        }
+
         const layerId = Number(payload?.layerId);
         if (!Number.isFinite(layerId)) {
           return;
