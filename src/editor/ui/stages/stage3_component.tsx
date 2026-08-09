@@ -390,7 +390,7 @@ class Stage3 extends KTUComponent {
   private async disconnectAfterPrintSettles(): Promise<void> {
     // Some printers keep physically feeding paper shortly after data transfer.
     await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 3000);
+      window.setTimeout(resolve, 30000);
     });
 
     const status = this.printer.getStatus();
