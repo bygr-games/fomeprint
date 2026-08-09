@@ -23,7 +23,11 @@ type PixiApplicationLike = {
 export class TouchManager {
   private readonly touchPoints = new Map<number, TouchPoint>();
   private previousAngleRadians: number | null = null;
+  private previousDistance: number | null = null;
   private activeLayerId: number | null = null;
+
+  private static readonly MIN_LAYER_SCALE = 0.05;
+  private static readonly MAX_LAYER_SCALE = 8;
 
   constructor(
     private readonly sceneStateId: string = "editorScene",
@@ -99,18 +103,26 @@ export class TouchManager {
     }
 
     const angle = this.getCurrentAngleRadians();
-    if (angle === null) {
+    const distance = this.getCurrentDistance();
+    if (angle === null || distance === null || distance <= 0) {
       return;
     }
 
     if (this.previousAngleRadians === null) {
       this.previousAngleRadians = angle;
-      return;
+    }
+    if (this.previousDistance === null) {
+      this.previousDistance = distance;
     }
 
-    const delta = this.normalizeRadians(angle - this.previousAngleRadians);
+    const angleDelta = this.normalizeRadians(angle - this.previousAngleRadians);
+    const scaleFactor = distance / this.previousDistance;
+
     this.previousAngleRadians = angle;
-    this.applyLayerRotationDelta(this.activeLayerId, delta);
+    this.previousDistance = distance;
+
+    this.applyLayerRotationDelta(this.activeLayerId, angleDelta);
+    this.applyLayerScaleDelta(this.activeLayerId, scaleFactor);
   };
 
   private onTouchEnd = (event: PixiTouchEventLike): void => {
@@ -122,6 +134,7 @@ export class TouchManager {
     if (this.touchPoints.size < 2) {
       this.activeLayerId = null;
       this.previousAngleRadians = null;
+      this.previousDistance = null;
     }
   };
 
@@ -130,15 +143,17 @@ export class TouchManager {
       return;
     }
 
-    const layer = this.getActiveRotatableLayer();
+    const layer = this.getActiveTransformableLayer();
     const angle = this.getCurrentAngleRadians();
-    if (!layer || angle === null) {
+    const distance = this.getCurrentDistance();
+    if (!layer || angle === null || distance === null || distance <= 0) {
       return;
     }
 
     if (this.activeLayerId === null || this.activeLayerId !== layer.id) {
       this.activeLayerId = layer.id;
       this.previousAngleRadians = angle;
+      this.previousDistance = distance;
       this.onMultiTouchStart?.();
     }
   }
@@ -152,6 +167,17 @@ export class TouchManager {
     const first = points[0];
     const second = points[1];
     return Math.atan2(second.y - first.y, second.x - first.x);
+  }
+
+  private getCurrentDistance(): number | null {
+    if (this.touchPoints.size < 2) {
+      return null;
+    }
+
+    const points = Array.from(this.touchPoints.values());
+    const first = points[0];
+    const second = points[1];
+    return Math.hypot(second.x - first.x, second.y - first.y);
   }
 
   private getPointerId(event: PixiTouchEventLike): number | null {
@@ -188,8 +214,8 @@ export class TouchManager {
     return normalized;
   }
 
-  private getActiveRotatableLayer():
-    | (DisplayLayerState & { rotation?: number })
+  private getActiveTransformableLayer():
+    | (DisplayLayerState & { rotation?: number; scale?: number })
     | undefined {
     const activeThingId = Number(
       DataStore.getInstance().getStore("activeThingId"),
@@ -203,8 +229,37 @@ export class TouchManager {
     ) as DisplayLayerState[];
 
     return layers.find((item) => item.id === activeThingId) as
-      | (DisplayLayerState & { rotation?: number })
+      | (DisplayLayerState & { rotation?: number; scale?: number })
       | undefined;
+  }
+
+  private applyLayerScaleDelta(layerId: number, factor: number): void {
+    if (!Number.isFinite(factor) || factor <= 0) {
+      return;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      this.sceneStateId + ".layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === layerId) as
+      | (DisplayLayerState & { scale?: number })
+      | undefined;
+
+    if (!layer || typeof layer.scale !== "number") {
+      return;
+    }
+
+    const nextScale = Math.min(
+      TouchManager.MAX_LAYER_SCALE,
+      Math.max(TouchManager.MIN_LAYER_SCALE, layer.scale * factor),
+    );
+
+    if (Math.abs(nextScale - layer.scale) < 0.0001) {
+      return;
+    }
+
+    executeCommand(new SetLayerFieldCommand(layer.id, "scale", nextScale));
+    DataStore.getInstance().touch(this.sceneStateId + ".layers.!" + layer.id);
   }
 
   private applyLayerRotationDelta(layerId: number, deltaRadians: number): void {
