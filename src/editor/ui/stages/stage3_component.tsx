@@ -1,26 +1,45 @@
 import jsx from "texsaur";
-import { KTUComponent } from "fra.ktu.red-component";
+import { DataStore, KTUComponent } from "fra.ktu.red-component";
 import {
   getPhomemoBluetoothPrinter,
   type PhomemoPrinterStatus,
 } from "../../printing/phomemo_bluetooth_printer";
 
+type PaperSizeOption = {
+  value: string;
+  label: string;
+  aspectRatio: number;
+  isDefault?: boolean;
+};
+
+type PaperSizesManifest = {
+  sizes: PaperSizeOption[];
+};
+
 class Stage3 extends KTUComponent {
   private readonly printer = getPhomemoBluetoothPrinter();
   private printerStatus: PhomemoPrinterStatus;
+  private paperSizes: PaperSizeOption[] = [];
+  private paperSizesLoadState: "loading" | "ready" | "error" = "loading";
 
   constructor(props: { binding?: string }) {
-    super({ binding: props.binding ?? "fomeprint.stage" });
+    const baseBinding = props.binding ?? "fomeprint.stage";
+    super({
+      binding: `${baseBinding},fomeprint.paperSize,fomeprint.paperAspectRatio`,
+    });
     this.printerStatus = this.printer.getStatus();
     this.printer.subscribe((status) => {
       this.printerStatus = status;
       this.reRender();
     });
+    void this.loadPaperSizes();
   }
 
   defaultBinding(): Record<string, any> {
     return {
       "fomeprint.stage": 1,
+      "fomeprint.paperSize": "50x50",
+      "fomeprint.paperAspectRatio": 1,
     };
   }
 
@@ -49,11 +68,48 @@ class Stage3 extends KTUComponent {
     }
 
     const statusKind = this.getStatusKind();
+    const selectedPaperSize = this.getSelectedPaperSize();
+    const selectedPaperValue = selectedPaperSize?.value ?? "50x50";
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
         <div class="stage3-print-panel">
           <div class="stage3-print-header">Phomemo (Bluetooth)</div>
+
+          <div class="stage3-paper-size-row">
+            <label for="paper-size-select" class="stage3-paper-size-label">
+              Paper Size
+            </label>
+            <select
+              id="paper-size-select"
+              class="stage3-paper-size-select"
+              onchange={(event: Event) => {
+                const target = event.target as HTMLSelectElement | null;
+                if (!target) {
+                  return;
+                }
+                this.handlePaperSizeChange(target.value);
+              }}
+            >
+              {this.paperSizes.map((paperSize) => (
+                <option
+                  value={paperSize.value}
+                  selected={paperSize.value === selectedPaperValue}
+                >
+                  {paperSize.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {this.paperSizesLoadState === "loading" && (
+            <div class="stage3-status-text">Loading paper sizes...</div>
+          )}
+
+          {this.paperSizesLoadState === "error" && (
+            <div class="stage3-warning">Could not load paper sizes.</div>
+          )}
+
           <div class="stage3-status-row">
             <span
               class={`stage3-status-dot stage3-status-${statusKind}`}
@@ -96,6 +152,120 @@ class Stage3 extends KTUComponent {
         </div>
       </div>
     );
+  }
+
+  private async loadPaperSizes() {
+    try {
+      const response = await fetch(
+        this.resolvePublicAssetPath("assets/paper_sizes.json"),
+        {
+          cache: "no-store",
+        },
+      );
+      if (!response.ok) {
+        throw new Error("Failed to load paper sizes.");
+      }
+
+      const data = (await response.json()) as Partial<PaperSizesManifest>;
+      const sizes = Array.isArray(data.sizes)
+        ? data.sizes.filter((size): size is PaperSizeOption => {
+            return (
+              typeof size?.value === "string" &&
+              typeof size?.label === "string" &&
+              Number.isFinite(size?.aspectRatio) &&
+              Number(size.aspectRatio) > 0
+            );
+          })
+        : [];
+
+      this.paperSizes = sizes;
+      this.paperSizesLoadState = "ready";
+      this.applyDefaultPaperSizeIfNeeded();
+    } catch {
+      this.paperSizes = [];
+      this.paperSizesLoadState = "error";
+    }
+
+    this.reRender();
+  }
+
+  private resolvePublicAssetPath(path: string): string {
+    if (/^(?:[a-z]+:)?\/\//i.test(path)) {
+      return path;
+    }
+
+    return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
+  }
+
+  private getSelectedPaperSize(): PaperSizeOption | null {
+    if (this.paperSizes.length === 0) {
+      return null;
+    }
+
+    const selectedValue = String(
+      DataStore.getInstance().getStore("fomeprint.paperSize") ??
+        this.bindingData["fomeprint.paperSize"] ??
+        "",
+    );
+    return (
+      this.paperSizes.find((paperSize) => paperSize.value === selectedValue) ??
+      this.getDefaultPaperSize()
+    );
+  }
+
+  private getDefaultPaperSize(): PaperSizeOption {
+    return (
+      this.paperSizes.find((paperSize) => paperSize.isDefault) ??
+      this.paperSizes.find((paperSize) => paperSize.value === "50x50") ??
+      this.paperSizes[0]
+    );
+  }
+
+  private applyDefaultPaperSizeIfNeeded() {
+    if (this.paperSizes.length === 0) {
+      return;
+    }
+
+    const selected = this.getSelectedPaperSize();
+    if (!selected) {
+      return;
+    }
+
+    const selectedValue = String(this.bindingData["fomeprint.paperSize"] ?? "");
+    const selectedRatio = Number(
+      this.bindingData["fomeprint.paperAspectRatio"],
+    );
+    const hasKnownSelection = this.paperSizes.some(
+      (paperSize) => paperSize.value === selectedValue,
+    );
+
+    if (
+      !hasKnownSelection ||
+      !Number.isFinite(selectedRatio) ||
+      selectedRatio <= 0
+    ) {
+      DataStore.getInstance().setStore("fomeprint.paperSize", selected.value);
+      DataStore.getInstance().setStore(
+        "fomeprint.paperAspectRatio",
+        selected.aspectRatio,
+      );
+    }
+  }
+
+  private handlePaperSizeChange(value: string) {
+    const selected = this.paperSizes.find(
+      (paperSize) => paperSize.value === value,
+    );
+    if (!selected) {
+      return;
+    }
+
+    DataStore.getInstance().setStore("fomeprint.paperSize", selected.value);
+    DataStore.getInstance().setStore(
+      "fomeprint.paperAspectRatio",
+      selected.aspectRatio,
+    );
+    this.reRender();
   }
 
   private statusText(): string {

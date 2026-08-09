@@ -428,6 +428,24 @@ code {
   font-weight: 700;
 }
 
+.stage3-paper-size-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage3-paper-size-label {
+  font-size: 14px;
+}
+
+.stage3-paper-size-select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 8px 10px;
+}
+
 .stage3-status-row {
   display: flex;
   align-items: center;

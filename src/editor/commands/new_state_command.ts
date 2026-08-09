@@ -65,6 +65,8 @@ export class NewStateCommand implements ICommand {
     };
     clearCommands();
     clearRedo();
+    DataStore.getInstance().setStore("fomeprint.paperSize", "50x50");
+    DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
     const activeThingId = DataStore.getInstance().getStore("activeThingId");
     DataStore.getInstance().setStore("activeThingId", null);
     touchThingsById(activeThingId);

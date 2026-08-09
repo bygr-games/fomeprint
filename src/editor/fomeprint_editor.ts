@@ -18,20 +18,43 @@ export class FomeprintEditor {
   private lastDragX: number | null = null;
   private lastDragY: number | null = null;
 
-  private fitCanvasToViewport = () => {
-    const size = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
+  private getPaperAspectRatio(): number {
+    const ratio = Number(
+      DataStore.getInstance().getStore("fomeprint.paperAspectRatio"),
+    );
+    if (!Number.isFinite(ratio) || ratio <= 0) {
+      return 1;
+    }
+    return ratio;
+  }
 
-    this.canvasContainer.style.width = size + "px";
-    this.canvasContainer.style.height = size + "px";
+  private fitCanvasToViewport = () => {
+    const viewportWidth = Math.max(1, window.innerWidth);
+    const viewportHeight = Math.max(1, window.innerHeight);
+    const aspectRatio = this.getPaperAspectRatio();
+
+    let width = viewportWidth;
+    let height = Math.round(width / aspectRatio);
+
+    if (height > viewportHeight) {
+      height = viewportHeight;
+      width = Math.round(height * aspectRatio);
+    }
+
+    width = Math.max(1, width);
+    height = Math.max(1, height);
+
+    this.canvasContainer.style.width = width + "px";
+    this.canvasContainer.style.height = height + "px";
 
     const state = DataStore.getInstance().getStore("editorScene") as
       | SceneState
       | undefined;
-    if (state && (state.width !== size || state.height !== size)) {
+    if (state && (state.width !== width || state.height !== height)) {
       DataStore.getInstance().setStore("editorScene", {
         ...state,
-        width: size,
-        height: size,
+        width,
+        height,
       });
     }
 
@@ -61,6 +84,12 @@ export class FomeprintEditor {
     );
     this.uiContainer.appendChild(EditorUIComponent({}));
     window.addEventListener("resize", this.fitCanvasToViewport);
+
+    EventDispatcher.getInstance().addEventListener(
+      "fomeprint.paperAspectRatio",
+      "update",
+      this.fitCanvasToViewport,
+    );
 
     EventDispatcher.getInstance().addEventListener(
       "editorScene.width",
