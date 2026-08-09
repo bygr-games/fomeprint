@@ -24,6 +24,7 @@ export class FomeprintEditor {
   private pinchStartAngle: number | null = null;
   private pinchStartRotation: number | null = null;
   private isControlKeyPressed = false;
+  private isTouchGestureActive = false;
 
   private static readonly MIN_LAYER_SCALE = 0.05;
   private static readonly MAX_LAYER_SCALE = 8;
@@ -107,8 +108,15 @@ export class FomeprintEditor {
     this.pinchStartRotation = null;
   }
 
+  private getActivePinchPoints(): Array<{ x: number; y: number }> {
+    const sorted = Array.from(this.activeTouchPointers.entries()).sort(
+      (left, right) => left[0] - right[0],
+    );
+    return sorted.map((entry) => entry[1]);
+  }
+
   private getPinchDistance(): number | null {
-    const points = Array.from(this.activeTouchPointers.values());
+    const points = this.getActivePinchPoints();
     if (points.length < 2) {
       return null;
     }
@@ -119,7 +127,7 @@ export class FomeprintEditor {
   }
 
   private getPinchAngle(): number | null {
-    const points = Array.from(this.activeTouchPointers.values());
+    const points = this.getActivePinchPoints();
     if (points.length < 2) {
       return null;
     }
@@ -360,6 +368,9 @@ export class FomeprintEditor {
 
   private bindPinchToZoomHandlers(): void {
     const onPointerDown = (event: PointerEvent) => {
+      if (this.isTouchGestureActive) {
+        return;
+      }
       if (event.pointerType !== "touch") {
         return;
       }
@@ -376,6 +387,9 @@ export class FomeprintEditor {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (this.isTouchGestureActive) {
+        return;
+      }
       if (event.pointerType !== "touch") {
         return;
       }
@@ -400,6 +414,9 @@ export class FomeprintEditor {
     };
 
     const onPointerEnd = (event: PointerEvent) => {
+      if (this.isTouchGestureActive) {
+        return;
+      }
       this.activeTouchPointers.delete(event.pointerId);
       if (this.activeTouchPointers.size < 2) {
         this.resetPinchState();
@@ -421,6 +438,7 @@ export class FomeprintEditor {
     };
 
     const onTouchStart = (event: TouchEvent) => {
+      this.isTouchGestureActive = true;
       if (event.cancelable) {
         event.preventDefault();
       }
@@ -444,6 +462,9 @@ export class FomeprintEditor {
       syncPointersFromTouches(event.touches);
       if (this.activeTouchPointers.size < 2) {
         this.resetPinchState();
+      }
+      if (event.touches.length === 0) {
+        this.isTouchGestureActive = false;
       }
     };
 
