@@ -11,7 +11,7 @@ import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapsho
 import { SetShaderFieldCommand } from "../../commands/shaders/set_shader_field_command";
 
 class Stage1 extends KTUComponent {
-  private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 2, 4, 8, 16];
+  private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";

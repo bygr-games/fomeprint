@@ -17,6 +17,17 @@ export class FomeprintEditor {
   private draggingLayerId: number | null = null;
   private lastDragX: number | null = null;
   private lastDragY: number | null = null;
+  private activeTouchPointers = new Map<number, { x: number; y: number }>();
+  private pinchLayerId: number | null = null;
+  private pinchStartDistance: number | null = null;
+  private pinchStartScale: number | null = null;
+  private pinchStartAngle: number | null = null;
+  private pinchStartRotation: number | null = null;
+  private isControlKeyPressed = false;
+
+  private static readonly MIN_LAYER_SCALE = 0.05;
+  private static readonly MAX_LAYER_SCALE = 8;
+  private static readonly WHEEL_ROTATION_SENSITIVITY = 0.01;
 
   private getPaperAspectRatio(): number {
     const ratio = Number(
@@ -64,6 +75,363 @@ export class FomeprintEditor {
     application?.resize?.();
   };
 
+  private getActiveScalableLayer():
+    | (DisplayLayerState & { scale?: number })
+    | undefined {
+    const activeThingId = Number(
+      DataStore.getInstance().getStore("activeThingId"),
+    );
+    if (!Number.isFinite(activeThingId)) {
+      return undefined;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      "editorScene.layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === activeThingId) as
+      | (DisplayLayerState & { scale?: number })
+      | undefined;
+
+    if (!layer || typeof layer.scale !== "number") {
+      return undefined;
+    }
+
+    return layer;
+  }
+
+  private resetPinchState(): void {
+    this.pinchLayerId = null;
+    this.pinchStartDistance = null;
+    this.pinchStartScale = null;
+    this.pinchStartAngle = null;
+    this.pinchStartRotation = null;
+  }
+
+  private getPinchDistance(): number | null {
+    const points = Array.from(this.activeTouchPointers.values());
+    if (points.length < 2) {
+      return null;
+    }
+
+    const first = points[0];
+    const second = points[1];
+    return Math.hypot(second.x - first.x, second.y - first.y);
+  }
+
+  private getPinchAngle(): number | null {
+    const points = Array.from(this.activeTouchPointers.values());
+    if (points.length < 2) {
+      return null;
+    }
+
+    const first = points[0];
+    const second = points[1];
+    return Math.atan2(second.y - first.y, second.x - first.x);
+  }
+
+  private normalizeAngleDelta(delta: number): number {
+    return Math.atan2(Math.sin(delta), Math.cos(delta));
+  }
+
+  private maybeBeginPinch(): void {
+    if (this.activeTouchPointers.size < 2 || this.pinchLayerId !== null) {
+      return;
+    }
+
+    const layer = this.getActiveScalableLayer();
+    const distance = this.getPinchDistance();
+    const angle = this.getPinchAngle();
+
+    if (!layer || !distance || distance <= 0 || angle === null) {
+      return;
+    }
+
+    this.pinchLayerId = layer.id;
+    this.pinchStartScale = layer.scale as number;
+    this.pinchStartDistance = distance;
+    this.pinchStartAngle = angle;
+    this.pinchStartRotation =
+      typeof (layer as { rotation?: number }).rotation === "number"
+        ? ((layer as { rotation?: number }).rotation as number)
+        : null;
+
+    // Prevent pan gestures from fighting pinch scale updates.
+    this.draggingLayerId = null;
+    this.lastDragX = null;
+    this.lastDragY = null;
+  }
+
+  private maybeUpdatePinchScale(): void {
+    if (
+      this.pinchLayerId === null ||
+      this.pinchStartDistance === null ||
+      this.pinchStartScale === null
+    ) {
+      return;
+    }
+
+    const distance = this.getPinchDistance();
+    if (!distance || distance <= 0) {
+      return;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      "editorScene.layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === this.pinchLayerId) as
+      | (DisplayLayerState & { scale?: number })
+      | undefined;
+    if (!layer || typeof layer.scale !== "number") {
+      this.resetPinchState();
+      return;
+    }
+
+    const factor = distance / this.pinchStartDistance;
+    const unclampedScale = this.pinchStartScale * factor;
+    const nextScale = Math.min(
+      FomeprintEditor.MAX_LAYER_SCALE,
+      Math.max(FomeprintEditor.MIN_LAYER_SCALE, unclampedScale),
+    );
+
+    if (Math.abs(nextScale - layer.scale) < 0.0001) {
+      return;
+    }
+
+    executeCommand(new SetLayerFieldCommand(layer.id, "scale", nextScale));
+    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
+  }
+
+  private maybeUpdatePinchRotation(): void {
+    if (
+      this.pinchLayerId === null ||
+      this.pinchStartAngle === null ||
+      this.pinchStartRotation === null
+    ) {
+      return;
+    }
+
+    const angle = this.getPinchAngle();
+    if (angle === null) {
+      return;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      "editorScene.layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === this.pinchLayerId) as
+      | (DisplayLayerState & { rotation?: number })
+      | undefined;
+    if (!layer || typeof layer.rotation !== "number") {
+      this.resetPinchState();
+      return;
+    }
+
+    const delta = this.normalizeAngleDelta(angle - this.pinchStartAngle);
+    const nextRotation = this.pinchStartRotation + delta;
+
+    if (Math.abs(nextRotation - layer.rotation) < 0.0001) {
+      return;
+    }
+
+    executeCommand(
+      new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
+    );
+    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
+  }
+
+  private applyLayerRotationDelta(layerId: number, deltaRadians: number): void {
+    if (!Number.isFinite(deltaRadians) || Math.abs(deltaRadians) < 0.0001) {
+      return;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      "editorScene.layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === layerId) as
+      | (DisplayLayerState & { rotation?: number })
+      | undefined;
+    if (!layer || typeof layer.rotation !== "number") {
+      return;
+    }
+
+    const nextRotation = layer.rotation + deltaRadians;
+    executeCommand(
+      new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
+    );
+    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
+  }
+
+  private applyLayerScaleDelta(layerId: number, factor: number): void {
+    if (!Number.isFinite(factor) || factor <= 0) {
+      return;
+    }
+
+    const layers = DataStore.getInstance().getStore(
+      "editorScene.layers",
+    ) as DisplayLayerState[];
+    const layer = layers.find((item) => item.id === layerId) as
+      | (DisplayLayerState & { scale?: number })
+      | undefined;
+    if (!layer || typeof layer.scale !== "number") {
+      return;
+    }
+
+    const nextScale = Math.min(
+      FomeprintEditor.MAX_LAYER_SCALE,
+      Math.max(FomeprintEditor.MIN_LAYER_SCALE, layer.scale * factor),
+    );
+
+    if (Math.abs(nextScale - layer.scale) < 0.0001) {
+      return;
+    }
+
+    executeCommand(new SetLayerFieldCommand(layer.id, "scale", nextScale));
+    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
+  }
+
+  private bindKeyboardModifierHandlers(): void {
+    window.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        this.isControlKeyPressed = true;
+      }
+    });
+
+    window.addEventListener("keyup", (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        this.isControlKeyPressed = false;
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      this.isControlKeyPressed = false;
+    });
+  }
+
+  private bindTrackpadPinchHandlers(): void {
+    const onWheel = (event: WheelEvent) => {
+      const path =
+        typeof event.composedPath === "function" ? event.composedPath() : [];
+      const isOverCanvas =
+        path.includes(this.canvasContainer) ||
+        this.canvasContainer.contains(event.target as Node);
+
+      if (!isOverCanvas) {
+        return;
+      }
+
+      // On desktop touchpads, pinch commonly arrives as ctrl+wheel.
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      const layer = this.getActiveScalableLayer();
+      if (!layer) {
+        return;
+      }
+
+      if (this.isControlKeyPressed) {
+        // Desktop/laptop: while physical Ctrl is held, pinch drives rotation.
+        const rotationDelta =
+          -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY;
+        this.applyLayerRotationDelta(layer.id, rotationDelta);
+      } else {
+        // Default desktop/laptop pinch behavior: zoom active layer.
+        const zoomFactor = Math.exp(
+          -event.deltaY * FomeprintEditor.WHEEL_ROTATION_SENSITIVITY,
+        );
+        this.applyLayerScaleDelta(layer.id, zoomFactor);
+      }
+    };
+
+    // Capture phase gives us first chance to stop browser page zoom.
+    window.addEventListener("wheel", onWheel, {
+      passive: false,
+      capture: true,
+    });
+  }
+
+  private bindPinchToZoomHandlers(): void {
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") {
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      this.activeTouchPointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+      this.maybeBeginPinch();
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") {
+        return;
+      }
+
+      if (!this.activeTouchPointers.has(event.pointerId)) {
+        return;
+      }
+
+      this.activeTouchPointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (this.activeTouchPointers.size >= 2) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        this.maybeBeginPinch();
+        this.maybeUpdatePinchScale();
+        this.maybeUpdatePinchRotation();
+      }
+    };
+
+    const onPointerEnd = (event: PointerEvent) => {
+      this.activeTouchPointers.delete(event.pointerId);
+      if (this.activeTouchPointers.size < 2) {
+        this.resetPinchState();
+      }
+    };
+
+    const preventTouchGesture = (event: Event) => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    this.canvasContainer.addEventListener("pointerdown", onPointerDown, {
+      passive: false,
+    });
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
+    window.addEventListener("pointerup", onPointerEnd, { passive: true });
+    window.addEventListener("pointercancel", onPointerEnd, { passive: true });
+
+    // Safari may still emit gesture/touch events for page zoom unless canceled.
+    this.canvasContainer.addEventListener("touchstart", preventTouchGesture, {
+      passive: false,
+    });
+    this.canvasContainer.addEventListener("touchmove", preventTouchGesture, {
+      passive: false,
+    });
+    this.canvasContainer.addEventListener("gesturestart", preventTouchGesture, {
+      passive: false,
+    } as AddEventListenerOptions);
+    this.canvasContainer.addEventListener(
+      "gesturechange",
+      preventTouchGesture,
+      { passive: false } as AddEventListenerOptions,
+    );
+  }
+
   public constructor(canvasContainer: HTMLElement, uiContainer: HTMLElement) {
     console.log(
       "Initializing FomeprintEditor with autosaved state:",
@@ -83,6 +451,9 @@ export class FomeprintEditor {
       }),
     );
     this.uiContainer.appendChild(EditorUIComponent({}));
+    this.bindKeyboardModifierHandlers();
+    this.bindPinchToZoomHandlers();
+    this.bindTrackpadPinchHandlers();
     window.addEventListener("resize", this.fitCanvasToViewport);
 
     EventDispatcher.getInstance().addEventListener(

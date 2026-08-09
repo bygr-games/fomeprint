@@ -71,12 +71,14 @@ body {
   position: absolute;
   inset: 0;
   margin: auto;
+  touch-action: none;
 }
 
 #canvasContainer canvas {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }
 
 #uiContainer {
