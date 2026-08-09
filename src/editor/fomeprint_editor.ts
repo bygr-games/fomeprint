@@ -406,7 +406,48 @@ export class FomeprintEditor {
       }
     };
 
-    const preventTouchGesture = (event: Event) => {
+    const syncPointersFromTouches = (touches: TouchList) => {
+      this.activeTouchPointers.clear();
+      for (let i = 0; i < touches.length; i++) {
+        const touch = touches.item(i);
+        if (!touch) {
+          continue;
+        }
+        this.activeTouchPointers.set(touch.identifier, {
+          x: touch.clientX,
+          y: touch.clientY,
+        });
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      syncPointersFromTouches(event.touches);
+      this.maybeBeginPinch();
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      syncPointersFromTouches(event.touches);
+      if (this.activeTouchPointers.size >= 2) {
+        this.maybeBeginPinch();
+        this.maybeUpdatePinchScale();
+        this.maybeUpdatePinchRotation();
+      }
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      syncPointersFromTouches(event.touches);
+      if (this.activeTouchPointers.size < 2) {
+        this.resetPinchState();
+      }
+    };
+
+    const preventGestureEvent = (event: Event) => {
       if (event.cancelable) {
         event.preventDefault();
       }
@@ -419,19 +460,23 @@ export class FomeprintEditor {
     window.addEventListener("pointerup", onPointerEnd, { passive: true });
     window.addEventListener("pointercancel", onPointerEnd, { passive: true });
 
-    // Safari may still emit gesture/touch events for page zoom unless canceled.
-    this.canvasContainer.addEventListener("touchstart", preventTouchGesture, {
+    // TouchEvent fallback for browsers where multi-touch pointer events are unreliable.
+    this.canvasContainer.addEventListener("touchstart", onTouchStart, {
       passive: false,
     });
-    this.canvasContainer.addEventListener("touchmove", preventTouchGesture, {
+    this.canvasContainer.addEventListener("touchmove", onTouchMove, {
       passive: false,
     });
-    this.canvasContainer.addEventListener("gesturestart", preventTouchGesture, {
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+    // Safari may still emit gesture events for page zoom unless canceled.
+    this.canvasContainer.addEventListener("gesturestart", preventGestureEvent, {
       passive: false,
     } as AddEventListenerOptions);
     this.canvasContainer.addEventListener(
       "gesturechange",
-      preventTouchGesture,
+      preventGestureEvent,
       { passive: false } as AddEventListenerOptions,
     );
   }
