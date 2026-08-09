@@ -82,6 +82,22 @@ body {
 #uiContainer {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+
+.editor-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.editor-ui .panel-container,
+.editor-ui button,
+.editor-ui select,
+.editor-ui input,
+.editor-ui textarea,
+.editor-ui label {
+  pointer-events: auto;
 }
 
 h1,
