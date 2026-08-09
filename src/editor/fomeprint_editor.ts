@@ -19,20 +19,19 @@ export class FomeprintEditor {
   private lastDragY: number | null = null;
 
   private fitCanvasToViewport = () => {
-    const width = Math.max(1, window.innerWidth);
-    const height = Math.max(1, window.innerHeight);
+    const size = Math.max(1, Math.min(window.innerWidth, window.innerHeight));
 
-    this.canvasContainer.style.width = width + "px";
-    this.canvasContainer.style.height = height + "px";
+    this.canvasContainer.style.width = size + "px";
+    this.canvasContainer.style.height = size + "px";
 
     const state = DataStore.getInstance().getStore("editorScene") as
       | SceneState
       | undefined;
-    if (state && (state.width !== width || state.height !== height)) {
+    if (state && (state.width !== size || state.height !== size)) {
       DataStore.getInstance().setStore("editorScene", {
         ...state,
-        width,
-        height,
+        width: size,
+        height: size,
       });
     }
 
