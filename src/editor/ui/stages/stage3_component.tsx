@@ -65,8 +65,6 @@ class Stage3 extends KTUComponent {
     let connectionLabel = "Connect";
     if (this.printerStatus.connection === "connecting") {
       connectionLabel = "Connecting...";
-    } else if (isConnected) {
-      connectionLabel = "Disconnect";
     }
 
     const statusKind = this.getStatusKind();
@@ -139,23 +137,27 @@ class Stage3 extends KTUComponent {
             <button type="button" onclick={() => this.handleDownloadButton()}>
               Download
             </button>
-            <button
-              type="button"
-              onclick={() => void this.handleConnectButton()}
-              disabled={!supportsBluetooth || !secureContext || !canConnect}
-            >
-              {connectionLabel}
-            </button>
+            {!isConnected && (
+              <button
+                type="button"
+                onclick={() => void this.handleConnectButton()}
+                disabled={!supportsBluetooth || !secureContext || !canConnect}
+              >
+                {connectionLabel}
+              </button>
+            )}
 
-            <button
-              type="button"
-              onclick={() => void this.handlePrintButton()}
-              disabled={!isConnected || isPrinting}
-            >
-              {isPrinting
-                ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
-                : "Print"}
-            </button>
+            {isConnected && (
+              <button
+                type="button"
+                onclick={() => void this.handlePrintButton()}
+                disabled={isPrinting}
+              >
+                {isPrinting
+                  ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
+                  : "Print"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -372,6 +374,7 @@ class Stage3 extends KTUComponent {
 
     try {
       await this.printer.printCanvas(canvas);
+      await this.printer.disconnect();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Print failed unexpectedly.";

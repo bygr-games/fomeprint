@@ -37,6 +37,7 @@ class Stage1 extends KTUComponent {
     const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
     const brightnessIndex = this.getAdjustmentFieldIndex("brightness");
     const contrastIndex = this.getAdjustmentFieldIndex("contrast");
+    const bayerPixelSize = this.getBayerPixelSize();
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
@@ -64,6 +65,16 @@ class Stage1 extends KTUComponent {
               +
             </button>
           </div>
+          <div class="stage-control-row">
+            <span class="stage-control-label">Bayer Pixel Size</span>
+            <button type="button" onclick={() => this.adjustBayerPixelSize(-1)}>
+              -
+            </button>
+            <span class="stage-control-value">{bayerPixelSize}</span>
+            <button type="button" onclick={() => this.adjustBayerPixelSize(1)}>
+              +
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -79,6 +90,27 @@ class Stage1 extends KTUComponent {
 
   private adjustContrast(delta: number) {
     this.adjustAdjustmentField("contrast", delta);
+  }
+
+  private adjustBayerPixelSize(delta: number) {
+    const shader = this.getBayerDitheringShader();
+    if (!shader) {
+      return;
+    }
+
+    const current = this.getBayerPixelSize();
+    const next = Math.max(1, Math.min(5, current + delta));
+
+    executeCommand(
+      new SetShaderFieldCommand(
+        shader.id,
+        "pixelSize",
+        next,
+        "editorScene.shaders",
+      ),
+    );
+
+    this.reRender();
   }
 
   private adjustAdjustmentField(
@@ -185,6 +217,33 @@ class Stage1 extends KTUComponent {
     }
 
     return null;
+  }
+
+  private getBayerPixelSize(): number {
+    const shader = this.getBayerDitheringShader();
+    if (!shader) {
+      return 3;
+    }
+
+    const raw = Number((shader as Record<string, unknown>).pixelSize);
+    const fallback = 3;
+    if (!Number.isFinite(raw)) {
+      return fallback;
+    }
+
+    const rounded = Math.round(raw);
+    return Math.max(1, Math.min(5, rounded));
+  }
+
+  private getBayerDitheringShader(): ShaderLayerState | null {
+    const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
+      | ShaderLayerState[]
+      | undefined;
+    if (!Array.isArray(shaders)) {
+      return null;
+    }
+
+    return shaders.find((shader) => shader.type === "bayer_dithering") ?? null;
   }
 }
 
