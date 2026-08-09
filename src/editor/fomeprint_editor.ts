@@ -153,7 +153,7 @@ export class FomeprintEditor {
     this.pinchStartRotation =
       typeof (layer as { rotation?: number }).rotation === "number"
         ? ((layer as { rotation?: number }).rotation as number)
-        : null;
+        : 0;
 
     // Prevent pan gestures from fighting pinch scale updates.
     this.draggingLayerId = null;
@@ -221,15 +221,17 @@ export class FomeprintEditor {
     const layer = layers.find((item) => item.id === this.pinchLayerId) as
       | (DisplayLayerState & { rotation?: number })
       | undefined;
-    if (!layer || typeof layer.rotation !== "number") {
-      this.resetPinchState();
+    if (!layer) {
       return;
     }
+
+    const currentRotation =
+      typeof layer.rotation === "number" ? layer.rotation : 0;
 
     const delta = this.normalizeAngleDelta(angle - this.pinchStartAngle);
     const nextRotation = this.pinchStartRotation + delta;
 
-    if (Math.abs(nextRotation - layer.rotation) < 0.0001) {
+    if (Math.abs(nextRotation - currentRotation) < 0.0001) {
       return;
     }
 
@@ -250,11 +252,13 @@ export class FomeprintEditor {
     const layer = layers.find((item) => item.id === layerId) as
       | (DisplayLayerState & { rotation?: number })
       | undefined;
-    if (!layer || typeof layer.rotation !== "number") {
+    if (!layer) {
       return;
     }
 
-    const nextRotation = layer.rotation + deltaRadians;
+    const currentRotation =
+      typeof layer.rotation === "number" ? layer.rotation : 0;
+    const nextRotation = currentRotation + deltaRadians;
     executeCommand(
       new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
     );
