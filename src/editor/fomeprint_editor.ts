@@ -23,6 +23,7 @@ export class FomeprintEditor {
   private pinchStartScale: number | null = null;
   private pinchStartAngle: number | null = null;
   private pinchStartRotation: number | null = null;
+  private pinchLastAngle: number | null = null;
   private isControlKeyPressed = false;
   private isTouchGestureActive = false;
 
@@ -106,6 +107,7 @@ export class FomeprintEditor {
     this.pinchStartScale = null;
     this.pinchStartAngle = null;
     this.pinchStartRotation = null;
+    this.pinchLastAngle = null;
   }
 
   private getActivePinchPoints(): Array<{ x: number; y: number }> {
@@ -162,6 +164,7 @@ export class FomeprintEditor {
       typeof (layer as { rotation?: number }).rotation === "number"
         ? ((layer as { rotation?: number }).rotation as number)
         : 0;
+    this.pinchLastAngle = angle;
 
     // Prevent pan gestures from fighting pinch scale updates.
     this.draggingLayerId = null;
@@ -213,7 +216,8 @@ export class FomeprintEditor {
     if (
       this.pinchLayerId === null ||
       this.pinchStartAngle === null ||
-      this.pinchStartRotation === null
+      this.pinchStartRotation === null ||
+      this.pinchLastAngle === null
     ) {
       return;
     }
@@ -233,20 +237,13 @@ export class FomeprintEditor {
       return;
     }
 
-    const currentRotation =
-      typeof layer.rotation === "number" ? layer.rotation : 0;
-
-    const delta = this.normalizeAngleDelta(angle - this.pinchStartAngle);
-    const nextRotation = this.pinchStartRotation + delta;
-
-    if (Math.abs(nextRotation - currentRotation) < 0.0001) {
+    const delta = this.normalizeAngleDelta(angle - this.pinchLastAngle);
+    this.pinchLastAngle = angle;
+    if (Math.abs(delta) < 0.0001) {
       return;
     }
 
-    executeCommand(
-      new SetLayerFieldCommand(layer.id, "rotation", nextRotation),
-    );
-    DataStore.getInstance().touch("editorScene.layers.!" + layer.id);
+    this.applyLayerRotationDelta(layer.id, delta);
   }
 
   private applyLayerRotationDelta(layerId: number, deltaRadians: number): void {
