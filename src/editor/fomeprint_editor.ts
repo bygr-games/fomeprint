@@ -485,9 +485,7 @@ export class FomeprintEditor {
     this.canvasContainer.addEventListener("touchstart", onTouchStart, {
       passive: false,
     });
-    this.canvasContainer.addEventListener("touchmove", onTouchMove, {
-      passive: false,
-    });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
