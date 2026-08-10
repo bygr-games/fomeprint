@@ -1,6 +1,13 @@
 import texsaurJsx from "texsaur";
 
 type JsxProps = Record<string, unknown>;
+type TexsaurJsxCompat = (
+  tag: unknown,
+  properties?: unknown,
+  ...children: unknown[]
+) => Node;
+
+const callTexsaurJsx = texsaurJsx as unknown as TexsaurJsxCompat;
 
 export default function jsx(
   tag: unknown,
@@ -10,10 +17,10 @@ export default function jsx(
   if (props && typeof tag === "string") {
     // Vite dev JSX can inject these debug fields; strip them for DOM tags.
     const { __source: _source, __self: _self, ...safeProps } = props;
-    return texsaurJsx(tag, safeProps as JsxProps, ...children);
+    return callTexsaurJsx(tag, safeProps as JsxProps, ...children);
   }
 
-  return texsaurJsx(tag, props ?? undefined, ...children);
+  return callTexsaurJsx(tag, props ?? undefined, ...children);
 }
 
 jsx.Fragment = texsaurJsx.Fragment;
