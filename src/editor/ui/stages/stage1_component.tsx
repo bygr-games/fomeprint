@@ -23,6 +23,7 @@ class Stage1 extends KTUComponent {
   private loadStatusMessage = "";
   private cameraDeviceIds: string[] = [];
   private currentCameraDeviceId: string | null = null;
+  private currentCameraIndex = 0;
   private isChangingCamera = false;
 
   constructor(props: { binding?: string }) {
@@ -144,23 +145,44 @@ class Stage1 extends KTUComponent {
         ?.getVideoTracks()[0]
         ?.getSettings().deviceId;
 
+      if (this.cameraDeviceIds.length === 0) {
+        this.currentCameraDeviceId = null;
+        this.currentCameraIndex = 0;
+        this.reRender();
+        return;
+      }
+
       if (
         typeof runtimeDeviceId === "string" &&
         this.cameraDeviceIds.includes(runtimeDeviceId)
       ) {
         this.currentCameraDeviceId = runtimeDeviceId;
+        this.currentCameraIndex = this.cameraDeviceIds.findIndex(
+          (id) => id === runtimeDeviceId,
+        );
       } else if (
         this.currentCameraDeviceId &&
         this.cameraDeviceIds.includes(this.currentCameraDeviceId)
       ) {
         // Keep previously known camera id.
+        this.currentCameraIndex = this.cameraDeviceIds.findIndex(
+          (id) => id === this.currentCameraDeviceId,
+        );
       } else {
-        this.currentCameraDeviceId = this.cameraDeviceIds[0] ?? null;
+        // Keep cycle continuity if browser does not expose a stable track deviceId.
+        const normalizedIndex =
+          ((this.currentCameraIndex % this.cameraDeviceIds.length) +
+            this.cameraDeviceIds.length) %
+          this.cameraDeviceIds.length;
+        this.currentCameraIndex = normalizedIndex;
+        this.currentCameraDeviceId =
+          this.cameraDeviceIds[this.currentCameraIndex] ?? null;
       }
     } catch (error) {
       console.warn("Could not enumerate camera devices", error);
       this.cameraDeviceIds = [];
       this.currentCameraDeviceId = null;
+      this.currentCameraIndex = 0;
     }
 
     this.reRender();
@@ -195,7 +217,7 @@ class Stage1 extends KTUComponent {
 
       const currentIndex = currentDeviceId
         ? this.cameraDeviceIds.findIndex((id) => id === currentDeviceId)
-        : -1;
+        : this.currentCameraIndex;
       const nextDeviceId = this.getNextCameraDeviceId(currentIndex);
       if (!nextDeviceId) {
         return;
@@ -217,7 +239,9 @@ class Stage1 extends KTUComponent {
         .forEach((track: MediaStreamTrack) => track.stop());
 
       this.currentCameraDeviceId = nextDeviceId;
-      await this.refreshCameraDevices();
+      this.currentCameraIndex = this.cameraDeviceIds.findIndex(
+        (id) => id === nextDeviceId,
+      );
     } catch (error) {
       console.error("Failed to switch camera", error);
     } finally {
@@ -292,8 +316,13 @@ class Stage1 extends KTUComponent {
     }
 
     const safeCurrentIndex =
-      currentIndex >= 0 && currentIndex < cameraCount ? currentIndex : -1;
-    const fallbackStart = safeCurrentIndex >= 0 ? safeCurrentIndex : 0;
+      currentIndex >= 0 && currentIndex < cameraCount
+        ? currentIndex
+        : this.currentCameraIndex;
+    const fallbackStart =
+      safeCurrentIndex >= 0 && safeCurrentIndex < cameraCount
+        ? safeCurrentIndex
+        : 0;
 
     for (let step = 1; step <= cameraCount; step++) {
       const candidateIndex = (fallbackStart + step) % cameraCount;
