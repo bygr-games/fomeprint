@@ -1,5 +1,9 @@
 import jsx from "texsaur";
 import {
+  clearCommands,
+  clearRedo,
+} from "../../../ktu/helpers/commands_manager";
+import {
   DataStore,
   KTUComponent,
   type DisplayLayerState,
@@ -9,9 +13,14 @@ import {
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapshot_camera_to_video_layer_command";
 import { SetShaderFieldCommand } from "../../commands/shaders/set_shader_field_command";
+import {
+  syncLayerBoundingBoxesByActiveThingId,
+  touchThingsById,
+} from "../../helpers/active_helper";
 
 class Stage1 extends KTUComponent {
   private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
+  private loadStatusMessage = "";
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -44,6 +53,21 @@ class Stage1 extends KTUComponent {
         <button type="button" onclick={() => this.snapshotCameraLayer()}>
           Snapshot Camera to Video Layer
         </button>
+        <div class="stage1-load-row">
+          <button type="button" onclick={() => this.openLoadFilePicker()}>
+            Load
+          </button>
+          <input
+            id="stage1-load-input"
+            class="stage1-load-input"
+            type="file"
+            accept=".fomeprint.red,application/json"
+            onchange={(event) => this.onLoadFileChange(event)}
+          />
+        </div>
+        {this.loadStatusMessage && (
+          <div class="stage1-load-status">{this.loadStatusMessage}</div>
+        )}
         <div class="stage-controls-group">
           <div class="stage-control-row">
             <span class="stage-control-label">Brightness</span>
@@ -82,6 +106,139 @@ class Stage1 extends KTUComponent {
 
   private snapshotCameraLayer() {
     executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
+  }
+
+  private openLoadFilePicker() {
+    const input = this.querySelector(
+      "#stage1-load-input",
+    ) as HTMLInputElement | null;
+    if (!input) {
+      return;
+    }
+
+    this.loadStatusMessage = "";
+    input.value = "";
+    input.click();
+    this.reRender();
+  }
+
+  private onLoadFileChange(event: Event) {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+
+    if (input) {
+      input.value = "";
+    }
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = reader.result;
+      if (typeof content !== "string") {
+        this.loadStatusMessage = "Could not read selected file.";
+        this.reRender();
+        return;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        this.loadStatusMessage = "Selected file is not valid JSON.";
+        this.reRender();
+        return;
+      }
+
+      const sceneState = this.coerceSceneState(parsed);
+      if (!sceneState) {
+        this.loadStatusMessage =
+          "Selected file is not a valid .fomeprint.red scene.";
+        this.reRender();
+        return;
+      }
+
+      this.applyLoadedSceneState(sceneState);
+    };
+
+    reader.onerror = () => {
+      this.loadStatusMessage = "Could not read selected file.";
+      this.reRender();
+    };
+
+    reader.readAsText(file);
+  }
+
+  private coerceSceneState(value: unknown): SceneState | null {
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    const candidate = value as Partial<SceneState> & Record<string, unknown>;
+    const width = Number(candidate.width);
+    const height = Number(candidate.height);
+    const duration = Number(candidate.duration);
+    const counter = Number(candidate.counter);
+
+    if (
+      !Array.isArray(candidate.layers) ||
+      !Array.isArray(candidate.shaders) ||
+      !Array.isArray(candidate.modulators) ||
+      !Array.isArray(candidate.signals) ||
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0 ||
+      !Number.isFinite(duration)
+    ) {
+      return null;
+    }
+
+    return {
+      name: typeof candidate.name === "string" ? candidate.name : "Loaded Scene",
+      width,
+      height,
+      duration,
+      layers: candidate.layers,
+      shaders: candidate.shaders,
+      modulators: candidate.modulators,
+      signals: candidate.signals,
+      assets:
+        candidate.assets && typeof candidate.assets === "object"
+          ? (candidate.assets as SceneState["assets"])
+          : {},
+      counter: Number.isFinite(counter) ? counter : 0,
+    };
+  }
+
+  private applyLoadedSceneState(sceneState: SceneState) {
+    const previousActiveThingId = Number(
+      DataStore.getInstance().getStore("activeThingId"),
+    );
+
+    clearCommands();
+    clearRedo();
+
+    DataStore.getInstance().setStore("activeThingId", null);
+    if (Number.isFinite(previousActiveThingId)) {
+      touchThingsById(previousActiveThingId);
+    }
+
+    DataStore.getInstance().setStore("editorScene", sceneState);
+    syncLayerBoundingBoxesByActiveThingId(null);
+
+    window.localStorage.setItem(
+      "autosavedState",
+      JSON.stringify({
+        data: sceneState,
+        dataAt: Date.now(),
+      }),
+    );
+
+    this.loadStatusMessage = "";
+    DataStore.getInstance().setStore("fomeprint.stage", 2);
   }
 
   private adjustBrightness(delta: number) {

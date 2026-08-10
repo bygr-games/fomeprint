@@ -357,6 +357,20 @@ code {
   gap: 8px;
 }
 
+.stage1-load-row {
+  margin-top: 8px;
+}
+
+.stage1-load-input {
+  display: none;
+}
+
+.stage1-load-status {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
 .stage-control-row {
   display: flex;
   align-items: center;

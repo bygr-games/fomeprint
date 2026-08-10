@@ -359,10 +359,7 @@ class Stage2 extends KTUComponent {
           typeof asset === "string" && asset.startsWith("data:image/"),
       );
 
-      if (
-        !this.selectedCategoryId &&
-        this.uploadedAssets.length > 0
-      ) {
+      if (!this.selectedCategoryId && this.uploadedAssets.length > 0) {
         this.selectedCategoryId = Stage2.uploadedCategoryId;
       }
     } catch {
@@ -415,7 +412,9 @@ class Stage2 extends KTUComponent {
 
     this.pendingRemoveAssetPath = null;
 
-    const nextAssets = this.uploadedAssets.filter((asset) => asset !== assetPath);
+    const nextAssets = this.uploadedAssets.filter(
+      (asset) => asset !== assetPath,
+    );
     if (nextAssets.length === this.uploadedAssets.length) {
       this.reRender();
       return;
