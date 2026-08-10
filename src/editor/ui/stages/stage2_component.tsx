@@ -22,14 +22,22 @@ type StickersManifest = {
 };
 
 class Stage2 extends KTUComponent {
+  private static readonly uploadedCategoryId = "uploaded";
+  private static readonly uploadedCategoryLabel = "Uploaded";
+  private static readonly uploadedStickersStorageKey =
+    "fomeprint.uploadedStickers";
+
   private manifest: StickersManifest | null = null;
+  private uploadedAssets: string[] = [];
   private selectedCategoryId = "";
   private loadingState: "loading" | "ready" | "error" = "loading";
   private uploadStatusMessage = "";
+  private pendingRemoveAssetPath: string | null = null;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: `${baseBinding},activeThingId,editorScene.layers` });
+    this.loadUploadedStickersFromStorage();
     void this.loadManifest();
   }
 
@@ -50,8 +58,10 @@ class Stage2 extends KTUComponent {
   render(): Element {
     const isVisible = this.currentStage() === 2;
     const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
-    const categories = this.manifest?.categories ?? [];
+    const categories = this.getCategories();
     const selectedCategory = this.getSelectedCategory();
+    const isUploadedCategorySelected =
+      selectedCategory?.id === Stage2.uploadedCategoryId;
     const activeStickerLayer = this.getActiveStickerLayer();
     const canDeleteActiveSticker = activeStickerLayer !== null;
 
@@ -66,9 +76,6 @@ class Stage2 extends KTUComponent {
             <div class="stickers-menu-status">
               Could not load sticker categories.
             </div>
-          )}
-          {this.loadingState === "ready" && categories.length === 0 && (
-            <div class="stickers-menu-status">No sticker categories found.</div>
           )}
           {this.loadingState === "ready" && categories.length > 0 && (
             <>
@@ -87,17 +94,35 @@ class Stage2 extends KTUComponent {
                 })}
               </div>
               <div class="stickers-grid">
-                {(selectedCategory?.assets ?? []).map((assetPath, index) => (
-                  <button
-                    type="button"
-                    class="sticker-thumb"
-                    title={assetPath}
-                    aria-label={`${selectedCategory?.label ?? "Sticker"} ${index + 1}`}
-                    onclick={() => this.createStickerLayer(assetPath)}
-                  >
-                    <img src={assetPath} alt="" />
-                  </button>
-                ))}
+                {(selectedCategory?.assets ?? []).map((assetPath, index) => {
+                  const ariaLabel = `${selectedCategory?.label ?? "Sticker"} ${index + 1}`;
+                  return (
+                    <div class="sticker-thumb-wrap">
+                      <button
+                        type="button"
+                        class="sticker-thumb"
+                        title={assetPath}
+                        aria-label={ariaLabel}
+                        onclick={() => this.createStickerLayer(assetPath)}
+                      >
+                        <img src={assetPath} alt="" />
+                      </button>
+                      {isUploadedCategorySelected && (
+                        <button
+                          type="button"
+                          class="sticker-thumb-remove"
+                          aria-label={`Remove ${ariaLabel}`}
+                          title="Remove uploaded sticker"
+                          onclick={(event) =>
+                            this.promptRemoveUploadedSticker(assetPath, event)
+                          }
+                        >
+                          x
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
               {selectedCategory && selectedCategory.assets.length === 0 && (
                 <div class="stickers-menu-status">
@@ -139,6 +164,29 @@ class Stage2 extends KTUComponent {
             Next
           </button>
         </div>
+        {this.pendingRemoveAssetPath && (
+          <div class="stage2-confirm-overlay" role="dialog" aria-modal="true">
+            <div class="stage2-confirm-modal">
+              <div class="stage2-confirm-title">Remove uploaded sticker?</div>
+              <div class="stage2-confirm-actions">
+                <button
+                  type="button"
+                  class="stage2-confirm-button stage2-confirm-cancel"
+                  onclick={() => this.cancelRemoveUploadedSticker()}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="stage2-confirm-button stage2-confirm-remove"
+                  onclick={() => this.confirmRemoveUploadedSticker()}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -175,12 +223,13 @@ class Stage2 extends KTUComponent {
         : [];
 
       this.manifest = { categories };
-      if (categories.length > 0) {
-        const hasSelected = categories.some(
+      const allCategories = this.getCategories();
+      if (allCategories.length > 0) {
+        const hasSelected = allCategories.some(
           (category) => category.id === this.selectedCategoryId,
         );
         if (!hasSelected) {
-          this.selectedCategoryId = categories[0].id;
+          this.selectedCategoryId = allCategories[0].id;
         }
       }
 
@@ -202,7 +251,7 @@ class Stage2 extends KTUComponent {
   }
 
   private getSelectedCategory(): StickerCategory | null {
-    const categories = this.manifest?.categories ?? [];
+    const categories = this.getCategories();
     if (categories.length === 0) {
       return null;
     }
@@ -220,6 +269,17 @@ class Stage2 extends KTUComponent {
 
     this.selectedCategoryId = categoryId;
     this.reRender();
+  }
+
+  private getCategories(): StickerCategory[] {
+    const categories = this.manifest?.categories ?? [];
+    const uploadedCategory: StickerCategory = {
+      id: Stage2.uploadedCategoryId,
+      label: Stage2.uploadedCategoryLabel,
+      assets: this.uploadedAssets,
+    };
+
+    return [...categories, uploadedCategory];
   }
 
   private goToThirdStage() {
@@ -259,6 +319,8 @@ class Stage2 extends KTUComponent {
         return;
       }
 
+      this.addUploadedSticker(result);
+      this.selectedCategoryId = Stage2.uploadedCategoryId;
       this.uploadStatusMessage = `Uploaded ${file.name}`;
       this.createStickerLayer(result);
       this.reRender();
@@ -274,6 +336,95 @@ class Stage2 extends KTUComponent {
     if (input) {
       input.value = "";
     }
+  }
+
+  private loadUploadedStickersFromStorage() {
+    try {
+      const raw = window.localStorage.getItem(
+        Stage2.uploadedStickersStorageKey,
+      );
+      if (!raw) {
+        this.uploadedAssets = [];
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) {
+        this.uploadedAssets = [];
+        return;
+      }
+
+      this.uploadedAssets = parsed.filter(
+        (asset): asset is string =>
+          typeof asset === "string" && asset.startsWith("data:image/"),
+      );
+
+      if (
+        !this.selectedCategoryId &&
+        this.uploadedAssets.length > 0
+      ) {
+        this.selectedCategoryId = Stage2.uploadedCategoryId;
+      }
+    } catch {
+      this.uploadedAssets = [];
+    }
+  }
+
+  private saveUploadedStickersToStorage() {
+    try {
+      window.localStorage.setItem(
+        Stage2.uploadedStickersStorageKey,
+        JSON.stringify(this.uploadedAssets),
+      );
+    } catch {
+      // Ignore storage quota and serialization failures.
+    }
+  }
+
+  private addUploadedSticker(assetPath: string) {
+    const deduped = [
+      assetPath,
+      ...this.uploadedAssets.filter((a) => a !== assetPath),
+    ];
+    this.uploadedAssets = deduped;
+    this.saveUploadedStickersToStorage();
+  }
+
+  private promptRemoveUploadedSticker(assetPath: string, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.pendingRemoveAssetPath = assetPath;
+    this.reRender();
+  }
+
+  private cancelRemoveUploadedSticker() {
+    if (!this.pendingRemoveAssetPath) {
+      return;
+    }
+
+    this.pendingRemoveAssetPath = null;
+    this.reRender();
+  }
+
+  private confirmRemoveUploadedSticker() {
+    const assetPath = this.pendingRemoveAssetPath;
+    if (!assetPath) {
+      return;
+    }
+
+    this.pendingRemoveAssetPath = null;
+
+    const nextAssets = this.uploadedAssets.filter((asset) => asset !== assetPath);
+    if (nextAssets.length === this.uploadedAssets.length) {
+      this.reRender();
+      return;
+    }
+
+    this.uploadedAssets = nextAssets;
+    this.saveUploadedStickersToStorage();
+    this.uploadStatusMessage = "Removed uploaded sticker.";
+    this.reRender();
   }
 
   private getActiveStickerLayer(): LayerState | null {

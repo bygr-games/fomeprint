@@ -417,6 +417,10 @@ code {
   gap: 8px;
 }
 
+.sticker-thumb-wrap {
+  position: relative;
+}
+
 .stickers-upload-row {
   display: flex;
   flex-direction: column;
@@ -454,6 +458,31 @@ code {
   object-fit: contain;
 }
 
+.sticker-thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-h);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+}
+
+.sticker-thumb-remove:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 .stage2-actions {
   display: flex;
   flex-wrap: wrap;
@@ -463,6 +492,54 @@ code {
 .stage2-delete-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.stage2-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #000 24%, transparent);
+}
+
+.stage2-confirm-modal {
+  width: min(280px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-h);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage2-confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stage2-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.stage2-confirm-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.stage2-confirm-remove {
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .stage3-print-panel {

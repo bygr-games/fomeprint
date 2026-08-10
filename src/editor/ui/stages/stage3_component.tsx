@@ -430,7 +430,10 @@ class Stage3 extends KTUComponent {
         return;
       }
 
-      this.downloadDataUrl(canvas.toDataURL("image/png"), `${fileNameBase}.png`);
+      this.downloadDataUrl(
+        canvas.toDataURL("image/png"),
+        `${fileNameBase}.png`,
+      );
     }, "image/png");
   }
 
