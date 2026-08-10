@@ -12,30 +12,29 @@ import {
 } from "fra.ktu.red-component";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapshot_camera_to_video_layer_command";
+import { SetLayerFieldCommand } from "../../commands/layers/set_layer_field_command";
 import { SetShaderFieldCommand } from "../../commands/shaders/set_shader_field_command";
 import {
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
 } from "../../helpers/active_helper";
 
+type CameraDeviceOption = {
+  id: string;
+  label: string;
+};
+
 class Stage1 extends KTUComponent {
   private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
   private loadStatusMessage = "";
-  private cameraDeviceIds: string[] = [];
-  private currentCameraDeviceId: string | null = null;
-  private currentCameraIndex = 0;
-  private isChangingCamera = false;
+  private availableCameras: CameraDeviceOption[] = [];
+  private isLoadingCameras = false;
+  private cameraLoadErrorMessage = "";
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: `${baseBinding},activeThingId,editorScene.layers` });
-    void this.refreshCameraDevices();
-
-    if (navigator.mediaDevices?.addEventListener) {
-      navigator.mediaDevices.addEventListener("devicechange", () => {
-        void this.refreshCameraDevices();
-      });
-    }
+    void this.refreshAvailableCameras();
   }
 
   defaultBinding(): Record<string, any> {
@@ -58,19 +57,18 @@ class Stage1 extends KTUComponent {
     const brightnessIndex = this.getAdjustmentFieldIndex("brightness");
     const contrastIndex = this.getAdjustmentFieldIndex("contrast");
     const bayerPixelSize = this.getBayerPixelSize();
-    const canChangeCamera = this.cameraDeviceIds.length > 1;
+    const targetCameraLayer = this.getTargetCameraLayer();
+    const selectedCameraId = targetCameraLayer?.cameraId ?? "";
+    const cameraOptions = this.getCameraOptionsForLayer(targetCameraLayer);
+    const cameraSelectDisabled =
+      !targetCameraLayer ||
+      this.isLoadingCameras ||
+      cameraOptions.length === 0;
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
         <button type="button" onclick={() => this.snapshotCameraLayer()}>
           Snapshot Camera to Video Layer
-        </button>
-        <button
-          type="button"
-          onclick={() => void this.changeCamera()}
-          disabled={!canChangeCamera || this.isChangingCamera}
-        >
-          {this.isChangingCamera ? "Switching Camera..." : "Change Camera"}
         </button>
         <div class="stage1-load-row">
           <button type="button" onclick={() => this.openLoadFilePicker()}>
@@ -118,229 +116,114 @@ class Stage1 extends KTUComponent {
               +
             </button>
           </div>
+          <div class="stage-control-row">
+            <span class="stage-control-label">Camera</span>
+            <select
+              class="stage1-camera-select"
+              disabled={cameraSelectDisabled}
+              onchange={(event: Event) => {
+                const target = event.target as HTMLSelectElement | null;
+                if (!target) {
+                  return;
+                }
+                this.onCameraSelectionChange(target.value);
+              }}
+            >
+              {cameraOptions.map((camera) => (
+                <option value={camera.id} selected={camera.id === selectedCameraId}>
+                  {camera.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onclick={() => void this.refreshAvailableCameras()}
+              disabled={this.isLoadingCameras}
+            >
+              {this.isLoadingCameras ? "..." : "Refresh"}
+            </button>
+          </div>
+          {this.cameraLoadErrorMessage && (
+            <div class="stage1-load-status">{this.cameraLoadErrorMessage}</div>
+          )}
         </div>
       </div>
     );
   }
 
-  private snapshotCameraLayer() {
-    executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
-  }
-
-  private async refreshCameraDevices(): Promise<void> {
-    if (!navigator.mediaDevices?.enumerateDevices) {
-      this.cameraDeviceIds = [];
-      this.currentCameraDeviceId = null;
+  private async refreshAvailableCameras() {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices ||
+      typeof navigator.mediaDevices.enumerateDevices !== "function"
+    ) {
+      this.availableCameras = [];
+      this.cameraLoadErrorMessage = "Camera devices are not available here.";
       this.reRender();
       return;
     }
+
+    this.isLoadingCameras = true;
+    this.cameraLoadErrorMessage = "";
+    this.reRender();
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      this.cameraDeviceIds = this.getNormalizedCameraDeviceIds(devices);
-
-      const runtimeVideo = this.getRuntimeCameraVideoElement();
-      const runtimeStream = this.getMediaStream(runtimeVideo?.srcObject);
-      const runtimeDeviceId = runtimeStream
-        ?.getVideoTracks()[0]
-        ?.getSettings().deviceId;
-
-      if (this.cameraDeviceIds.length === 0) {
-        this.currentCameraDeviceId = null;
-        this.currentCameraIndex = 0;
-        this.reRender();
-        return;
-      }
-
-      if (
-        typeof runtimeDeviceId === "string" &&
-        this.cameraDeviceIds.includes(runtimeDeviceId)
-      ) {
-        this.currentCameraDeviceId = runtimeDeviceId;
-        this.currentCameraIndex = this.cameraDeviceIds.findIndex(
-          (id) => id === runtimeDeviceId,
-        );
-      } else if (
-        this.currentCameraDeviceId &&
-        this.cameraDeviceIds.includes(this.currentCameraDeviceId)
-      ) {
-        // Keep previously known camera id.
-        this.currentCameraIndex = this.cameraDeviceIds.findIndex(
-          (id) => id === this.currentCameraDeviceId,
-        );
-      } else {
-        // Keep cycle continuity if browser does not expose a stable track deviceId.
-        const normalizedIndex =
-          ((this.currentCameraIndex % this.cameraDeviceIds.length) +
-            this.cameraDeviceIds.length) %
-          this.cameraDeviceIds.length;
-        this.currentCameraIndex = normalizedIndex;
-        this.currentCameraDeviceId =
-          this.cameraDeviceIds[this.currentCameraIndex] ?? null;
-      }
-    } catch (error) {
-      console.warn("Could not enumerate camera devices", error);
-      this.cameraDeviceIds = [];
-      this.currentCameraDeviceId = null;
-      this.currentCameraIndex = 0;
-    }
-
-    this.reRender();
-  }
-
-  private async changeCamera(): Promise<void> {
-    if (
-      this.isChangingCamera ||
-      !navigator.mediaDevices?.getUserMedia ||
-      this.cameraDeviceIds.length <= 1
-    ) {
-      return;
-    }
-
-    const runtimeVideo = this.getRuntimeCameraVideoElement();
-    if (!runtimeVideo) {
-      console.warn("Camera layer runtime video is not ready");
-      return;
-    }
-
-    this.isChangingCamera = true;
-    this.reRender();
-
-    try {
-      const currentStream = this.getMediaStream(runtimeVideo.srcObject);
-      const currentTrack = currentStream?.getVideoTracks()[0];
-      const currentTrackDeviceId = currentTrack?.getSettings?.().deviceId;
-      const currentDeviceId =
-        typeof currentTrackDeviceId === "string" && currentTrackDeviceId
-          ? currentTrackDeviceId
-          : this.currentCameraDeviceId;
-
-      const currentIndex = currentDeviceId
-        ? this.cameraDeviceIds.findIndex((id) => id === currentDeviceId)
-        : this.currentCameraIndex;
-      const nextDeviceId = this.getNextCameraDeviceId(currentIndex);
-      if (!nextDeviceId) {
-        return;
-      }
-
-      const previousStream = this.getMediaStream(runtimeVideo.srcObject);
-      const nextStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: { exact: nextDeviceId },
-        },
-        audio: false,
-      });
-
-      runtimeVideo.srcObject = nextStream;
-      await runtimeVideo.play().catch(() => undefined);
-
-      previousStream
-        ?.getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop());
-
-      this.currentCameraDeviceId = nextDeviceId;
-      this.currentCameraIndex = this.cameraDeviceIds.findIndex(
-        (id) => id === nextDeviceId,
-      );
-    } catch (error) {
-      console.error("Failed to switch camera", error);
+      this.availableCameras = devices
+        .filter((device) => device.kind === "videoinput")
+        .map((device, index) => ({
+          id: device.deviceId,
+          label: device.label || `Camera ${index + 1}`,
+        }))
+        .filter((camera) => camera.id.length > 0);
+    } catch {
+      this.availableCameras = [];
+      this.cameraLoadErrorMessage = "Could not list camera devices.";
     } finally {
-      this.isChangingCamera = false;
+      this.isLoadingCameras = false;
       this.reRender();
     }
   }
 
-  private getRuntimeCameraVideoElement(): HTMLVideoElement | null {
-    const sceneState = DataStore.getInstance().getStore("editorScene") as
-      | SceneState
-      | undefined;
-    if (!sceneState) {
-      return null;
+  private onCameraSelectionChange(nextCameraId: string) {
+    const layer = this.getTargetCameraLayer();
+    if (!layer || nextCameraId === layer.cameraId) {
+      return;
     }
 
-    const cameraLayer = sceneState.layers.find(
-      (layer) => layer.type === "camera",
-    );
-    if (!cameraLayer) {
-      return null;
-    }
-
-    const runtimeLayers = DataStore.getInstance().getStore(
-      "instances.editorScene.layers",
-    ) as
-      | Array<{
-          id: number;
-          mainSprite?: {
-            texture?: {
-              source?: {
-                resource?: HTMLVideoElement;
-              };
-            };
-          };
-        }>
-      | undefined;
-
-    const runtimeCameraLayer = runtimeLayers?.find(
-      (layer) => layer.id === cameraLayer.id,
-    );
-
-    return runtimeCameraLayer?.mainSprite?.texture?.source?.resource ?? null;
+    executeCommand(new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId));
+    this.reRender();
   }
 
-  private getNormalizedCameraDeviceIds(devices: MediaDeviceInfo[]): string[] {
-    const allVideoInputIds = devices
-      .filter((device) => device.kind === "videoinput")
-      .map((device) => device.deviceId)
-      .filter((deviceId) => typeof deviceId === "string" && deviceId);
+  private getCameraOptionsForLayer(
+    layer: (DisplayLayerState & { cameraId?: string }) | null,
+  ): CameraDeviceOption[] {
+    const options = [...this.availableCameras];
+    const selectedCameraId =
+      typeof layer?.cameraId === "string" ? layer.cameraId : "";
 
-    const preferredVideoInputIds = allVideoInputIds.filter(
-      (deviceId) => deviceId !== "default" && deviceId !== "communications",
-    );
+    if (
+      selectedCameraId &&
+      !options.some((camera) => camera.id === selectedCameraId)
+    ) {
+      options.unshift({
+        id: selectedCameraId,
+        label: "Current Camera",
+      });
+    }
 
-    const sourceIds =
-      preferredVideoInputIds.length > 0
-        ? preferredVideoInputIds
-        : allVideoInputIds;
+    if (options.length === 0) {
+      options.push({
+        id: "",
+        label: this.isLoadingCameras ? "Loading cameras..." : "No cameras found",
+      });
+    }
 
-    return [...new Set(sourceIds)];
+    return options;
   }
 
-  private getNextCameraDeviceId(currentIndex: number): string | null {
-    const cameraCount = this.cameraDeviceIds.length;
-    if (cameraCount === 0) {
-      return null;
-    }
-
-    if (cameraCount === 1) {
-      return this.cameraDeviceIds[0] ?? null;
-    }
-
-    const safeCurrentIndex =
-      currentIndex >= 0 && currentIndex < cameraCount
-        ? currentIndex
-        : this.currentCameraIndex;
-    const fallbackStart =
-      safeCurrentIndex >= 0 && safeCurrentIndex < cameraCount
-        ? safeCurrentIndex
-        : 0;
-
-    for (let step = 1; step <= cameraCount; step++) {
-      const candidateIndex = (fallbackStart + step) % cameraCount;
-      if (candidateIndex !== safeCurrentIndex) {
-        return this.cameraDeviceIds[candidateIndex] ?? null;
-      }
-    }
-
-    return null;
-  }
-
-  private getMediaStream(
-    mediaProvider: MediaProvider | null | undefined,
-  ): MediaStream | null {
-    if (mediaProvider instanceof MediaStream) {
-      return mediaProvider;
-    }
-    return null;
+  private snapshotCameraLayer() {
+    executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
   }
 
   private openLoadFilePicker() {
@@ -610,6 +493,44 @@ class Stage1 extends KTUComponent {
     }
 
     return null;
+  }
+
+  private getTargetCameraLayer(): (DisplayLayerState & { cameraId: string }) | null {
+    const scene = DataStore.getInstance().getStore("editorScene") as
+      | SceneState
+      | undefined;
+    if (!scene) {
+      return null;
+    }
+
+    const activeThingId = Number(
+      DataStore.getInstance().getStore("activeThingId"),
+    );
+    const activeLayer = scene.layers.find(
+      (layer) => layer.id === activeThingId,
+    ) as (DisplayLayerState & { cameraId?: string }) | undefined;
+
+    if (activeLayer?.type === "camera") {
+      return {
+        ...(activeLayer as DisplayLayerState),
+        cameraId: typeof activeLayer.cameraId === "string" ? activeLayer.cameraId : "",
+      };
+    }
+
+    const cameraLayer = [...scene.layers]
+      .reverse()
+      .find((layer) => layer.type === "camera") as
+      | (DisplayLayerState & { cameraId?: string })
+      | undefined;
+    if (!cameraLayer) {
+      return null;
+    }
+
+    return {
+      ...(cameraLayer as DisplayLayerState),
+      cameraId:
+        typeof cameraLayer.cameraId === "string" ? cameraLayer.cameraId : "",
+    };
   }
 
   private getBayerPixelSize(): number {
