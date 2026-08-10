@@ -421,15 +421,35 @@ class Stage3 extends KTUComponent {
       return;
     }
 
-    const fileName = this.buildDownloadFileName();
+    const fileNameBase = this.buildDownloadFileNameBase();
+    this.downloadEditorSceneState(fileNameBase);
+
     canvas.toBlob((blob) => {
       if (blob) {
-        this.downloadBlob(blob, fileName);
+        this.downloadBlob(blob, `${fileNameBase}.png`);
         return;
       }
 
-      this.downloadDataUrl(canvas.toDataURL("image/png"), fileName);
+      this.downloadDataUrl(canvas.toDataURL("image/png"), `${fileNameBase}.png`);
     }, "image/png");
+  }
+
+  private downloadEditorSceneState(fileNameBase: string): void {
+    const editorSceneState = DataStore.getInstance().getStore("editorScene");
+    if (!editorSceneState || typeof editorSceneState !== "object") {
+      this.printerStatus = {
+        ...this.printerStatus,
+        message: "Could not find editor scene state to download.",
+      };
+      this.reRender();
+      return;
+    }
+
+    const serializedState = JSON.stringify(editorSceneState, null, 2);
+    const stateBlob = new Blob([serializedState], {
+      type: "application/json;charset=utf-8",
+    });
+    this.downloadBlob(stateBlob, `${fileNameBase}.fomeprint.red`);
   }
 
   private downloadBlob(blob: Blob, fileName: string): void {
@@ -448,7 +468,7 @@ class Stage3 extends KTUComponent {
     anchor.remove();
   }
 
-  private buildDownloadFileName(): string {
+  private buildDownloadFileNameBase(): string {
     const now = new Date();
     const pad = (value: number) => String(value).padStart(2, "0");
     const timestamp = [
@@ -456,7 +476,7 @@ class Stage3 extends KTUComponent {
       `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`,
     ].join("-");
 
-    return `fomeprint-${timestamp}.png`;
+    return `fomeprint-${timestamp}`;
   }
 
   private resetState() {
