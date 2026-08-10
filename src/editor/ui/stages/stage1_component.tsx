@@ -8,12 +8,10 @@ import {
   KTUComponent,
   type DisplayLayerState,
   type SceneState,
-  type ShaderLayerState,
 } from "fra.ktu.red-component";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapshot_camera_to_video_layer_command";
 import { SetLayerFieldCommand } from "../../commands/layers/set_layer_field_command";
-import { SetShaderFieldCommand } from "../../commands/shaders/set_shader_field_command";
 import {
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
@@ -28,7 +26,6 @@ type CameraDeviceOption = {
 class Stage1 extends KTUComponent {
   private loadStatusMessage = "";
   private availableCameras: CameraDeviceOption[] = [];
-  private isLoadingCameras = false;
   private cameraLoadErrorMessage = "";
   private cameraIndex = 0;
 
@@ -122,7 +119,6 @@ class Stage1 extends KTUComponent {
       return;
     }
 
-    this.isLoadingCameras = true;
     this.cameraLoadErrorMessage = "";
     this.reRender();
 
@@ -139,7 +135,6 @@ class Stage1 extends KTUComponent {
       this.availableCameras = [];
       this.cameraLoadErrorMessage = "Could not list camera devices.";
     } finally {
-      this.isLoadingCameras = false;
       this.reRender();
     }
   }
@@ -154,35 +149,6 @@ class Stage1 extends KTUComponent {
       new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId),
     );
     this.reRender();
-  }
-
-  private getCameraOptionsForLayer(
-    layer: (DisplayLayerState & { cameraId?: string }) | null,
-  ): CameraDeviceOption[] {
-    const options = [...this.availableCameras];
-    const selectedCameraId =
-      typeof layer?.cameraId === "string" ? layer.cameraId : "";
-
-    if (
-      selectedCameraId &&
-      !options.some((camera) => camera.id === selectedCameraId)
-    ) {
-      options.unshift({
-        id: selectedCameraId,
-        label: "Current Camera",
-      });
-    }
-
-    if (options.length === 0) {
-      options.push({
-        id: "",
-        label: this.isLoadingCameras
-          ? "Loading cameras..."
-          : "No cameras found",
-      });
-    }
-
-    return options;
   }
 
   private snapshotCameraLayer() {
