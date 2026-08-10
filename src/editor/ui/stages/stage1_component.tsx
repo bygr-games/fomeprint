@@ -136,10 +136,7 @@ class Stage1 extends KTUComponent {
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      this.cameraDeviceIds = devices
-        .filter((device) => device.kind === "videoinput")
-        .map((device) => device.deviceId)
-        .filter((deviceId) => typeof deviceId === "string" && deviceId);
+      this.cameraDeviceIds = this.getNormalizedCameraDeviceIds(devices);
 
       const runtimeVideo = this.getRuntimeCameraVideoElement();
       const runtimeStream = this.getMediaStream(runtimeVideo?.srcObject);
@@ -199,11 +196,10 @@ class Stage1 extends KTUComponent {
       const currentIndex = currentDeviceId
         ? this.cameraDeviceIds.findIndex((id) => id === currentDeviceId)
         : -1;
-      const nextIndex =
-        currentIndex >= 0
-          ? (currentIndex + 1) % this.cameraDeviceIds.length
-          : 0;
-      const nextDeviceId = this.cameraDeviceIds[nextIndex];
+      const nextDeviceId = this.getNextCameraDeviceId(currentIndex);
+      if (!nextDeviceId) {
+        return;
+      }
 
       const previousStream = this.getMediaStream(runtimeVideo.srcObject);
       const nextStream = await navigator.mediaDevices.getUserMedia({
@@ -238,7 +234,9 @@ class Stage1 extends KTUComponent {
       return null;
     }
 
-    const cameraLayer = sceneState.layers.find((layer) => layer.type === "camera");
+    const cameraLayer = sceneState.layers.find(
+      (layer) => layer.type === "camera",
+    );
     if (!cameraLayer) {
       return null;
     }
@@ -263,6 +261,48 @@ class Stage1 extends KTUComponent {
     );
 
     return runtimeCameraLayer?.mainSprite?.texture?.source?.resource ?? null;
+  }
+
+  private getNormalizedCameraDeviceIds(devices: MediaDeviceInfo[]): string[] {
+    const allVideoInputIds = devices
+      .filter((device) => device.kind === "videoinput")
+      .map((device) => device.deviceId)
+      .filter((deviceId) => typeof deviceId === "string" && deviceId);
+
+    const preferredVideoInputIds = allVideoInputIds.filter(
+      (deviceId) => deviceId !== "default" && deviceId !== "communications",
+    );
+
+    const sourceIds =
+      preferredVideoInputIds.length > 0
+        ? preferredVideoInputIds
+        : allVideoInputIds;
+
+    return [...new Set(sourceIds)];
+  }
+
+  private getNextCameraDeviceId(currentIndex: number): string | null {
+    const cameraCount = this.cameraDeviceIds.length;
+    if (cameraCount === 0) {
+      return null;
+    }
+
+    if (cameraCount === 1) {
+      return this.cameraDeviceIds[0] ?? null;
+    }
+
+    const safeCurrentIndex =
+      currentIndex >= 0 && currentIndex < cameraCount ? currentIndex : -1;
+    const fallbackStart = safeCurrentIndex >= 0 ? safeCurrentIndex : 0;
+
+    for (let step = 1; step <= cameraCount; step++) {
+      const candidateIndex = (fallbackStart + step) % cameraCount;
+      if (candidateIndex !== safeCurrentIndex) {
+        return this.cameraDeviceIds[candidateIndex] ?? null;
+      }
+    }
+
+    return null;
   }
 
   private getMediaStream(
