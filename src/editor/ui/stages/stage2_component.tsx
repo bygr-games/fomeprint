@@ -10,6 +10,7 @@ import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint
 import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
 import { DeleteLayerCommand } from "../../commands/layers/delete_layer_command";
 import { NewStateCommand } from "../../commands/new_state_command";
+import { IconReset } from "../../helpers/icons";
 
 type StickerCategory = {
   id: string;
@@ -67,6 +68,26 @@ class Stage2 extends KTUComponent {
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
+        <div class="stage2-actions">
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.resetState()}
+          >
+            {IconReset()}
+          </button>
+          <button
+            type="button"
+            class="stage2-delete-button"
+            onclick={() => this.deleteActiveStickerLayer()}
+            disabled={!canDeleteActiveSticker}
+          >
+            Delete Active Sticker
+          </button>
+          <button type="button" onclick={() => this.goToThirdStage()}>
+            Next
+          </button>
+        </div>
         <div class="stickers-menu">
           <div class="stickers-menu-header">Stickers</div>
           {this.loadingState === "loading" && (
@@ -147,22 +168,6 @@ class Stage2 extends KTUComponent {
               )}
             </>
           )}
-        </div>
-        <div class="stage2-actions">
-          <button type="button" onclick={() => this.resetState()}>
-            Reset
-          </button>
-          <button
-            type="button"
-            class="stage2-delete-button"
-            onclick={() => this.deleteActiveStickerLayer()}
-            disabled={!canDeleteActiveSticker}
-          >
-            Delete Active Sticker
-          </button>
-          <button type="button" onclick={() => this.goToThirdStage()}>
-            Next
-          </button>
         </div>
         {this.pendingRemoveAssetPath && (
           <div class="stage2-confirm-overlay" role="dialog" aria-modal="true">

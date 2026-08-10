@@ -18,7 +18,7 @@ import {
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
 } from "../../helpers/active_helper";
-import { IconSnapshot } from "../../helpers/icons";
+import { IconSnapshot, IconOpenFile, IconSwap } from "../../helpers/icons";
 
 type CameraDeviceOption = {
   id: string;
@@ -26,11 +26,11 @@ type CameraDeviceOption = {
 };
 
 class Stage1 extends KTUComponent {
-  private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
   private loadStatusMessage = "";
   private availableCameras: CameraDeviceOption[] = [];
   private isLoadingCameras = false;
   private cameraLoadErrorMessage = "";
+  private cameraIndex = 0;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -55,113 +55,59 @@ class Stage1 extends KTUComponent {
   render(): Element {
     const isVisible = this.currentStage() === 1;
     const visibilityClass = isVisible ? "" : "hidden";
-    const brightnessIndex = this.getAdjustmentFieldIndex("brightness");
-    const contrastIndex = this.getAdjustmentFieldIndex("contrast");
-    const bayerPixelSize = this.getBayerPixelSize();
-    const targetCameraLayer = this.getTargetCameraLayer();
-    const selectedCameraId = targetCameraLayer?.cameraId ?? "";
-    const hFlipEnabled = targetCameraLayer?.hFlip ?? false;
-    const cameraOptions = this.getCameraOptionsForLayer(targetCameraLayer);
-    const cameraSelectDisabled =
-      !targetCameraLayer || this.isLoadingCameras || cameraOptions.length === 0;
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
-        <button type="button" onclick={() => this.snapshotCameraLayer()}>
+        <button
+          type="button"
+          class="ui-square-action-button"
+          onclick={() => this.openLoadFilePicker()}
+        >
+          {IconOpenFile()}
+        </button>
+        <button
+          type="button"
+          class="ui-square-action-button"
+          onclick={() => this.snapshotCameraLayer()}
+        >
           {IconSnapshot()}
         </button>
-        <div class="stage1-load-row">
-          <button type="button" onclick={() => this.openLoadFilePicker()}>
-            Load
-          </button>
-          <input
-            id="stage1-load-input"
-            class="stage1-load-input"
-            type="file"
-            accept=".fomeprint.red,application/json"
-            onchange={(event) => this.onLoadFileChange(event)}
-          />
-        </div>
+        <button
+          type="button"
+          class="ui-square-action-button"
+          onclick={() => this.swapCamera()}
+        >
+          {IconSwap()}
+        </button>
+        <input
+          id="stage1-load-input"
+          class="stage1-load-input hidden"
+          type="file"
+          accept=".fomeprint.red,application/json"
+          onchange={(event) => this.onLoadFileChange(event)}
+        />
         {this.loadStatusMessage && (
           <div class="stage1-load-status">{this.loadStatusMessage}</div>
         )}
         <div class="stage-controls-group">
-          <div class="stage-control-row">
-            <span class="stage-control-label">Brightness</span>
-            <button type="button" onclick={() => this.adjustBrightness(-1)}>
-              -
-            </button>
-            <span class="stage-control-value">{brightnessIndex + 1}</span>
-            <button type="button" onclick={() => this.adjustBrightness(1)}>
-              +
-            </button>
-          </div>
-          <div class="stage-control-row">
-            <span class="stage-control-label">Contrast</span>
-            <button type="button" onclick={() => this.adjustContrast(-1)}>
-              -
-            </button>
-            <span class="stage-control-value">{contrastIndex + 1}</span>
-            <button type="button" onclick={() => this.adjustContrast(1)}>
-              +
-            </button>
-          </div>
-          <div class="stage-control-row">
-            <span class="stage-control-label">Bayer Pixel Size</span>
-            <button type="button" onclick={() => this.adjustBayerPixelSize(-1)}>
-              -
-            </button>
-            <span class="stage-control-value">{bayerPixelSize}</span>
-            <button type="button" onclick={() => this.adjustBayerPixelSize(1)}>
-              +
-            </button>
-          </div>
-          <div class="stage-control-row">
-            <span class="stage-control-label">Camera</span>
-            <select
-              class="stage1-camera-select"
-              disabled={cameraSelectDisabled}
-              onchange={(event: Event) => {
-                const target = event.target as HTMLSelectElement | null;
-                if (!target) {
-                  return;
-                }
-                this.onCameraSelectionChange(target.value);
-              }}
-            >
-              {cameraOptions.map((camera) => (
-                <option
-                  value={camera.id}
-                  selected={camera.id === selectedCameraId}
-                >
-                  {camera.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onclick={() => void this.refreshAvailableCameras()}
-              disabled={this.isLoadingCameras}
-            >
-              {this.isLoadingCameras ? "..." : "Refresh"}
-            </button>
-          </div>
-          <div class="stage-control-row">
-            <span class="stage-control-label">H Flip</span>
-            <button
-              type="button"
-              onclick={() => this.toggleCameraHFlip()}
-              disabled={!targetCameraLayer}
-            >
-              {hFlipEnabled ? "On" : "Off"}
-            </button>
-          </div>
           {this.cameraLoadErrorMessage && (
             <div class="stage1-load-status">{this.cameraLoadErrorMessage}</div>
           )}
         </div>
       </div>
     );
+  }
+
+  private async swapCamera() {
+    console.log("Swapping camera...");
+    await this.refreshAvailableCameras();
+    if (this.availableCameras.length === 0) {
+      return;
+    }
+
+    this.cameraIndex = (this.cameraIndex + 1) % this.availableCameras.length;
+    const nextCameraId = this.availableCameras[this.cameraIndex].id;
+    this.onCameraSelectionChange(nextCameraId);
   }
 
   private async refreshAvailableCameras() {
@@ -207,16 +153,6 @@ class Stage1 extends KTUComponent {
     executeCommand(
       new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId),
     );
-    this.reRender();
-  }
-
-  private toggleCameraHFlip() {
-    const layer = this.getTargetCameraLayer();
-    if (!layer) {
-      return;
-    }
-
-    executeCommand(new SetLayerFieldCommand(layer.id, "hFlip", !layer.hFlip));
     this.reRender();
   }
 
@@ -387,141 +323,6 @@ class Stage1 extends KTUComponent {
     DataStore.getInstance().setStore("fomeprint.stage", 2);
   }
 
-  private adjustBrightness(delta: number) {
-    this.adjustAdjustmentField("brightness", delta);
-  }
-
-  private adjustContrast(delta: number) {
-    this.adjustAdjustmentField("contrast", delta);
-  }
-
-  private adjustBayerPixelSize(delta: number) {
-    const shader = this.getBayerDitheringShader();
-    if (!shader) {
-      return;
-    }
-
-    const current = this.getBayerPixelSize();
-    const next = Math.max(1, Math.min(5, current + delta));
-
-    executeCommand(
-      new SetShaderFieldCommand(
-        shader.id,
-        "pixelSize",
-        next,
-        "editorScene.shaders",
-      ),
-    );
-
-    this.reRender();
-  }
-
-  private adjustAdjustmentField(
-    field: "brightness" | "contrast",
-    delta: number,
-  ) {
-    const target = this.getTargetAdjustmentShader();
-    if (!target) {
-      return;
-    }
-
-    const currentIndex = this.getAdjustmentFieldIndex(field);
-    const nextIndex = Math.max(
-      0,
-      Math.min(this.adjustmentSteps.length - 1, currentIndex + delta),
-    );
-    const nextValue = this.adjustmentSteps[nextIndex];
-
-    executeCommand(
-      new SetShaderFieldCommand(
-        target.shader.id,
-        field,
-        nextValue,
-        `editorScene.layers.!${target.layer.id}.shaders`,
-      ),
-    );
-
-    this.reRender();
-  }
-
-  private getAdjustmentFieldIndex(field: "brightness" | "contrast"): number {
-    const target = this.getTargetAdjustmentShader();
-    if (!target) {
-      return this.adjustmentSteps.indexOf(1);
-    }
-
-    const current = Number((target.shader as Record<string, unknown>)[field]);
-    if (!Number.isFinite(current)) {
-      return this.adjustmentSteps.indexOf(1);
-    }
-
-    let closestIndex = 0;
-    let closestDistance = Math.abs(this.adjustmentSteps[0] - current);
-
-    for (let i = 1; i < this.adjustmentSteps.length; i++) {
-      const distance = Math.abs(this.adjustmentSteps[i] - current);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = i;
-      }
-    }
-
-    return closestIndex;
-  }
-
-  private getTargetAdjustmentShader(): {
-    layer: DisplayLayerState & { shaders: ShaderLayerState[] };
-    shader: ShaderLayerState;
-  } | null {
-    const scene = DataStore.getInstance().getStore("editorScene") as
-      | SceneState
-      | undefined;
-    if (!scene) {
-      return null;
-    }
-
-    const activeThingId = Number(
-      DataStore.getInstance().getStore("activeThingId"),
-    );
-    const activeLayer = scene.layers.find(
-      (layer) => layer.id === activeThingId,
-    ) as (DisplayLayerState & { shaders?: ShaderLayerState[] }) | undefined;
-
-    const candidateLayers: Array<
-      DisplayLayerState & { shaders?: ShaderLayerState[] }
-    > = [];
-
-    if (activeLayer?.type === "video" || activeLayer?.type === "camera") {
-      candidateLayers.push(activeLayer);
-    }
-
-    for (const layer of [...scene.layers].reverse()) {
-      if (layer.type === "video" || layer.type === "camera") {
-        if (!candidateLayers.some((candidate) => candidate.id === layer.id)) {
-          candidateLayers.push(
-            layer as DisplayLayerState & { shaders?: ShaderLayerState[] },
-          );
-        }
-      }
-    }
-
-    for (const layer of candidateLayers) {
-      const shaders = Array.isArray(layer.shaders) ? layer.shaders : [];
-      const adjustmentShader = shaders.find(
-        (shader) => shader.type === "adjustment",
-      ) as ShaderLayerState | undefined;
-
-      if (adjustmentShader) {
-        return {
-          layer: layer as DisplayLayerState & { shaders: ShaderLayerState[] },
-          shader: adjustmentShader,
-        };
-      }
-    }
-
-    return null;
-  }
-
   private getTargetCameraLayer():
     | (DisplayLayerState & { cameraId: string; hFlip: boolean })
     | null {
@@ -563,33 +364,6 @@ class Stage1 extends KTUComponent {
         typeof cameraLayer.cameraId === "string" ? cameraLayer.cameraId : "",
       hFlip: Boolean((cameraLayer as Record<string, unknown>).hFlip),
     };
-  }
-
-  private getBayerPixelSize(): number {
-    const shader = this.getBayerDitheringShader();
-    if (!shader) {
-      return 3;
-    }
-
-    const raw = Number((shader as Record<string, unknown>).pixelSize);
-    const fallback = 3;
-    if (!Number.isFinite(raw)) {
-      return fallback;
-    }
-
-    const rounded = Math.round(raw);
-    return Math.max(1, Math.min(5, rounded));
-  }
-
-  private getBayerDitheringShader(): ShaderLayerState | null {
-    const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
-      | ShaderLayerState[]
-      | undefined;
-    if (!Array.isArray(shaders)) {
-      return null;
-    }
-
-    return shaders.find((shader) => shader.type === "bayer_dithering") ?? null;
   }
 }
 
