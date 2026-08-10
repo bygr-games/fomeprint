@@ -59,11 +59,10 @@ class Stage1 extends KTUComponent {
     const bayerPixelSize = this.getBayerPixelSize();
     const targetCameraLayer = this.getTargetCameraLayer();
     const selectedCameraId = targetCameraLayer?.cameraId ?? "";
+    const hFlipEnabled = targetCameraLayer?.hFlip ?? false;
     const cameraOptions = this.getCameraOptionsForLayer(targetCameraLayer);
     const cameraSelectDisabled =
-      !targetCameraLayer ||
-      this.isLoadingCameras ||
-      cameraOptions.length === 0;
+      !targetCameraLayer || this.isLoadingCameras || cameraOptions.length === 0;
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
@@ -130,7 +129,10 @@ class Stage1 extends KTUComponent {
               }}
             >
               {cameraOptions.map((camera) => (
-                <option value={camera.id} selected={camera.id === selectedCameraId}>
+                <option
+                  value={camera.id}
+                  selected={camera.id === selectedCameraId}
+                >
                   {camera.label}
                 </option>
               ))}
@@ -141,6 +143,16 @@ class Stage1 extends KTUComponent {
               disabled={this.isLoadingCameras}
             >
               {this.isLoadingCameras ? "..." : "Refresh"}
+            </button>
+          </div>
+          <div class="stage-control-row">
+            <span class="stage-control-label">H Flip</span>
+            <button
+              type="button"
+              onclick={() => this.toggleCameraHFlip()}
+              disabled={!targetCameraLayer}
+            >
+              {hFlipEnabled ? "On" : "Off"}
             </button>
           </div>
           {this.cameraLoadErrorMessage && (
@@ -191,7 +203,19 @@ class Stage1 extends KTUComponent {
       return;
     }
 
-    executeCommand(new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId));
+    executeCommand(
+      new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId),
+    );
+    this.reRender();
+  }
+
+  private toggleCameraHFlip() {
+    const layer = this.getTargetCameraLayer();
+    if (!layer) {
+      return;
+    }
+
+    executeCommand(new SetLayerFieldCommand(layer.id, "hFlip", !layer.hFlip));
     this.reRender();
   }
 
@@ -215,7 +239,9 @@ class Stage1 extends KTUComponent {
     if (options.length === 0) {
       options.push({
         id: "",
-        label: this.isLoadingCameras ? "Loading cameras..." : "No cameras found",
+        label: this.isLoadingCameras
+          ? "Loading cameras..."
+          : "No cameras found",
       });
     }
 
@@ -495,7 +521,9 @@ class Stage1 extends KTUComponent {
     return null;
   }
 
-  private getTargetCameraLayer(): (DisplayLayerState & { cameraId: string }) | null {
+  private getTargetCameraLayer():
+    | (DisplayLayerState & { cameraId: string; hFlip: boolean })
+    | null {
     const scene = DataStore.getInstance().getStore("editorScene") as
       | SceneState
       | undefined;
@@ -513,7 +541,9 @@ class Stage1 extends KTUComponent {
     if (activeLayer?.type === "camera") {
       return {
         ...(activeLayer as DisplayLayerState),
-        cameraId: typeof activeLayer.cameraId === "string" ? activeLayer.cameraId : "",
+        cameraId:
+          typeof activeLayer.cameraId === "string" ? activeLayer.cameraId : "",
+        hFlip: Boolean((activeLayer as Record<string, unknown>).hFlip),
       };
     }
 
@@ -530,6 +560,7 @@ class Stage1 extends KTUComponent {
       ...(cameraLayer as DisplayLayerState),
       cameraId:
         typeof cameraLayer.cameraId === "string" ? cameraLayer.cameraId : "",
+      hFlip: Boolean((cameraLayer as Record<string, unknown>).hFlip),
     };
   }
 
