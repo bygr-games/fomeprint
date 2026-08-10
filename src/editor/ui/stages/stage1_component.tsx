@@ -21,10 +21,20 @@ import {
 class Stage1 extends KTUComponent {
   private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
   private loadStatusMessage = "";
+  private cameraDeviceIds: string[] = [];
+  private currentCameraDeviceId: string | null = null;
+  private isChangingCamera = false;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: `${baseBinding},activeThingId,editorScene.layers` });
+    void this.refreshCameraDevices();
+
+    if (navigator.mediaDevices?.addEventListener) {
+      navigator.mediaDevices.addEventListener("devicechange", () => {
+        void this.refreshCameraDevices();
+      });
+    }
   }
 
   defaultBinding(): Record<string, any> {
@@ -47,11 +57,19 @@ class Stage1 extends KTUComponent {
     const brightnessIndex = this.getAdjustmentFieldIndex("brightness");
     const contrastIndex = this.getAdjustmentFieldIndex("contrast");
     const bayerPixelSize = this.getBayerPixelSize();
+    const canChangeCamera = this.cameraDeviceIds.length > 1;
 
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
         <button type="button" onclick={() => this.snapshotCameraLayer()}>
           Snapshot Camera to Video Layer
+        </button>
+        <button
+          type="button"
+          onclick={() => void this.changeCamera()}
+          disabled={!canChangeCamera || this.isChangingCamera}
+        >
+          {this.isChangingCamera ? "Switching Camera..." : "Change Camera"}
         </button>
         <div class="stage1-load-row">
           <button type="button" onclick={() => this.openLoadFilePicker()}>
@@ -106,6 +124,154 @@ class Stage1 extends KTUComponent {
 
   private snapshotCameraLayer() {
     executeCommand(new SnapshotCameraToVideoLayerCommand("editorScene"));
+  }
+
+  private async refreshCameraDevices(): Promise<void> {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      this.cameraDeviceIds = [];
+      this.currentCameraDeviceId = null;
+      this.reRender();
+      return;
+    }
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.cameraDeviceIds = devices
+        .filter((device) => device.kind === "videoinput")
+        .map((device) => device.deviceId)
+        .filter((deviceId) => typeof deviceId === "string" && deviceId);
+
+      const runtimeVideo = this.getRuntimeCameraVideoElement();
+      const runtimeStream = this.getMediaStream(runtimeVideo?.srcObject);
+      const runtimeDeviceId = runtimeStream
+        ?.getVideoTracks()[0]
+        ?.getSettings().deviceId;
+
+      if (
+        typeof runtimeDeviceId === "string" &&
+        this.cameraDeviceIds.includes(runtimeDeviceId)
+      ) {
+        this.currentCameraDeviceId = runtimeDeviceId;
+      } else if (
+        this.currentCameraDeviceId &&
+        this.cameraDeviceIds.includes(this.currentCameraDeviceId)
+      ) {
+        // Keep previously known camera id.
+      } else {
+        this.currentCameraDeviceId = this.cameraDeviceIds[0] ?? null;
+      }
+    } catch (error) {
+      console.warn("Could not enumerate camera devices", error);
+      this.cameraDeviceIds = [];
+      this.currentCameraDeviceId = null;
+    }
+
+    this.reRender();
+  }
+
+  private async changeCamera(): Promise<void> {
+    if (
+      this.isChangingCamera ||
+      !navigator.mediaDevices?.getUserMedia ||
+      this.cameraDeviceIds.length <= 1
+    ) {
+      return;
+    }
+
+    const runtimeVideo = this.getRuntimeCameraVideoElement();
+    if (!runtimeVideo) {
+      console.warn("Camera layer runtime video is not ready");
+      return;
+    }
+
+    this.isChangingCamera = true;
+    this.reRender();
+
+    try {
+      const currentStream = this.getMediaStream(runtimeVideo.srcObject);
+      const currentTrack = currentStream?.getVideoTracks()[0];
+      const currentTrackDeviceId = currentTrack?.getSettings?.().deviceId;
+      const currentDeviceId =
+        typeof currentTrackDeviceId === "string" && currentTrackDeviceId
+          ? currentTrackDeviceId
+          : this.currentCameraDeviceId;
+
+      const currentIndex = currentDeviceId
+        ? this.cameraDeviceIds.findIndex((id) => id === currentDeviceId)
+        : -1;
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + 1) % this.cameraDeviceIds.length
+          : 0;
+      const nextDeviceId = this.cameraDeviceIds[nextIndex];
+
+      const previousStream = this.getMediaStream(runtimeVideo.srcObject);
+      const nextStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: { exact: nextDeviceId },
+        },
+        audio: false,
+      });
+
+      runtimeVideo.srcObject = nextStream;
+      await runtimeVideo.play().catch(() => undefined);
+
+      previousStream
+        ?.getTracks()
+        .forEach((track: MediaStreamTrack) => track.stop());
+
+      this.currentCameraDeviceId = nextDeviceId;
+      await this.refreshCameraDevices();
+    } catch (error) {
+      console.error("Failed to switch camera", error);
+    } finally {
+      this.isChangingCamera = false;
+      this.reRender();
+    }
+  }
+
+  private getRuntimeCameraVideoElement(): HTMLVideoElement | null {
+    const sceneState = DataStore.getInstance().getStore("editorScene") as
+      | SceneState
+      | undefined;
+    if (!sceneState) {
+      return null;
+    }
+
+    const cameraLayer = sceneState.layers.find((layer) => layer.type === "camera");
+    if (!cameraLayer) {
+      return null;
+    }
+
+    const runtimeLayers = DataStore.getInstance().getStore(
+      "instances.editorScene.layers",
+    ) as
+      | Array<{
+          id: number;
+          mainSprite?: {
+            texture?: {
+              source?: {
+                resource?: HTMLVideoElement;
+              };
+            };
+          };
+        }>
+      | undefined;
+
+    const runtimeCameraLayer = runtimeLayers?.find(
+      (layer) => layer.id === cameraLayer.id,
+    );
+
+    return runtimeCameraLayer?.mainSprite?.texture?.source?.resource ?? null;
+  }
+
+  private getMediaStream(
+    mediaProvider: MediaProvider | null | undefined,
+  ): MediaStream | null {
+    if (mediaProvider instanceof MediaStream) {
+      return mediaProvider;
+    }
+    return null;
   }
 
   private openLoadFilePicker() {
@@ -197,7 +363,8 @@ class Stage1 extends KTUComponent {
     }
 
     return {
-      name: typeof candidate.name === "string" ? candidate.name : "Loaded Scene",
+      name:
+        typeof candidate.name === "string" ? candidate.name : "Loaded Scene",
       width,
       height,
       duration,
