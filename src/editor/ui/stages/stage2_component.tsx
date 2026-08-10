@@ -1,4 +1,4 @@
-import jsx from "texsaur";
+import jsx from "../jsx";
 import {
   DataStore,
   KTUComponent,
@@ -57,7 +57,7 @@ class Stage2 extends KTUComponent {
 
   render(): Element {
     const isVisible = this.currentStage() === 2;
-    const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
+    const visibilityClass = isVisible ? "" : "hidden";
     const categories = this.getCategories();
     const selectedCategory = this.getSelectedCategory();
     const isUploadedCategorySelected =

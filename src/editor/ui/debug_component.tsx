@@ -1,4 +1,4 @@
-import jsx from "texsaur";
+import jsx from "./jsx";
 import { KTUComponent } from "fra.ktu.red-component";
 import { executeCommand } from "../../ktu/helpers/commands_manager";
 import { ToggleBayerDitheringCommand } from "../commands/shaders/toggle_bayer_dithering_command";

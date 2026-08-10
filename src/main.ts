@@ -4,7 +4,8 @@ import { FomeprintEditor } from "./editor/fomeprint_editor";
 window.addEventListener("DOMContentLoaded", () => {
   new FomeprintEditor(
     document.getElementById("canvasContainer")!,
-    document.getElementById("uiContainer")!,
+    document.getElementById("topUIContainer")!,
+    document.getElementById("bottomUIContainer")!,
   );
 });
 

@@ -1,4 +1,4 @@
-import jsx from "texsaur";
+import jsx from "../jsx";
 import {
   clearCommands,
   clearRedo,
@@ -18,6 +18,7 @@ import {
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
 } from "../../helpers/active_helper";
+import { IconSnapshot } from "../../helpers/icons";
 
 type CameraDeviceOption = {
   id: string;
@@ -53,7 +54,7 @@ class Stage1 extends KTUComponent {
 
   render(): Element {
     const isVisible = this.currentStage() === 1;
-    const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
+    const visibilityClass = isVisible ? "" : "hidden";
     const brightnessIndex = this.getAdjustmentFieldIndex("brightness");
     const contrastIndex = this.getAdjustmentFieldIndex("contrast");
     const bayerPixelSize = this.getBayerPixelSize();
@@ -67,7 +68,7 @@ class Stage1 extends KTUComponent {
     return (
       <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
         <button type="button" onclick={() => this.snapshotCameraLayer()}>
-          Snapshot Camera to Video Layer
+          {IconSnapshot()}
         </button>
         <div class="stage1-load-row">
           <button type="button" onclick={() => this.openLoadFilePicker()}>

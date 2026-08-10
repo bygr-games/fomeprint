@@ -6,14 +6,16 @@ import {
 } from "fra.ktu.red-component";
 import { executeCommand } from "../ktu/helpers/commands_manager";
 import { NewStateCommand } from "./commands/new_state_command";
-import { EditorUIComponent } from "./ui/editor_ui";
+import { TopUIComponent } from "./ui/top_ui";
+import { BottomUIComponent } from "./ui/bottom_ui";
 import { GestureManager } from "./managers/gesture_manager";
 import { MouseManager } from "./managers/mouse_manager";
 import { TouchManager } from "./managers/touch_manager";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
-  uiContainer: HTMLElement;
+  topUIContainer: HTMLElement;
+  bottomUIContainer: HTMLElement;
   private readonly mouseManager: MouseManager;
 
   private getPaperAspectRatio(): number {
@@ -62,13 +64,18 @@ export class FomeprintEditor {
     application?.resize?.();
   };
 
-  public constructor(canvasContainer: HTMLElement, uiContainer: HTMLElement) {
+  public constructor(
+    canvasContainer: HTMLElement,
+    topUIContainer: HTMLElement,
+    bottomUIContainer: HTMLElement,
+  ) {
     console.log(
       "Initializing FomeprintEditor with autosaved state:",
       window.localStorage.getItem("autosavedState"),
     );
     this.canvasContainer = canvasContainer;
-    this.uiContainer = uiContainer;
+    this.topUIContainer = topUIContainer;
+    this.bottomUIContainer = bottomUIContainer;
     this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
@@ -80,7 +87,8 @@ export class FomeprintEditor {
         resizeTo: canvasContainer,
       }),
     );
-    this.uiContainer.appendChild(EditorUIComponent({}));
+    this.topUIContainer.appendChild(TopUIComponent({}));
+    this.bottomUIContainer.appendChild(BottomUIComponent({}));
     if (TouchManager.hasSeveralTouchPoints()) {
       new TouchManager("editorScene", () => this.mouseManager.resetDragState());
     } else {

@@ -1,4 +1,4 @@
-import jsx from "texsaur";
+import jsx from "../jsx";
 import { DataStore, KTUComponent } from "fra.ktu.red-component";
 import {
   getPhomemoBluetoothPrinter,
@@ -55,7 +55,7 @@ class Stage3 extends KTUComponent {
 
   render(): Element {
     const isVisible = this.currentStage() === 3;
-    const visibilityClass = isVisible ? "stage-visible" : "stage-hidden";
+    const visibilityClass = isVisible ? "" : "hidden";
     const supportsBluetooth = this.printer.isBluetoothAvailable();
     const secureContext = window.isSecureContext;
     const canConnect = this.printerStatus.connection !== "connecting";
