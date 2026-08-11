@@ -54,8 +54,10 @@ class Stage3 extends KTUComponent {
   }
 
   render(): Element {
-    const isVisible = this.currentStage() === 3;
-    const visibilityClass = isVisible ? "" : "hidden";
+    if (this.currentStage() !== 3) {
+      return <div></div>;
+    }
+
     const supportsBluetooth = this.printer.isBluetoothAvailable();
     const secureContext = window.isSecureContext;
     const canConnect = this.printerStatus.connection !== "connecting";
@@ -72,7 +74,7 @@ class Stage3 extends KTUComponent {
     const selectedPaperValue = selectedPaperSize?.value ?? "50x50";
 
     return (
-      <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
+      <div class="panel-container left-ui stage-panel">
         <div class="stage3-print-panel">
           <div class="stage3-print-header">Phomemo (Bluetooth)</div>
 

@@ -10,7 +10,7 @@ import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint
 import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
 import { DeleteLayerCommand } from "../../commands/layers/delete_layer_command";
 import { NewStateCommand } from "../../commands/new_state_command";
-import { IconReset } from "../../helpers/icons";
+import { IconNext, IconPlus, IconReset, IconTrash } from "../../helpers/icons";
 
 type StickerCategory = {
   id: string;
@@ -34,6 +34,7 @@ class Stage2 extends KTUComponent {
   private loadingState: "loading" | "ready" | "error" = "loading";
   private uploadStatusMessage = "";
   private pendingRemoveAssetPath: string | null = null;
+  private isStickersMenuOpen = false;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -57,8 +58,10 @@ class Stage2 extends KTUComponent {
   }
 
   render(): Element {
-    const isVisible = this.currentStage() === 2;
-    const visibilityClass = isVisible ? "" : "hidden";
+    if (this.currentStage() !== 2) {
+      return <div></div>;
+    }
+
     const categories = this.getCategories();
     const selectedCategory = this.getSelectedCategory();
     const isUploadedCategorySelected =
@@ -67,7 +70,7 @@ class Stage2 extends KTUComponent {
     const canDeleteActiveSticker = activeStickerLayer !== null;
 
     return (
-      <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
+      <div class="panel-container left-ui stage-panel">
         <div class="stage2-actions">
           <button
             type="button"
@@ -78,17 +81,28 @@ class Stage2 extends KTUComponent {
           </button>
           <button
             type="button"
-            class="stage2-delete-button"
+            class="ui-square-action-button"
+            onclick={() => this.toggleStickersMenu()}
+          >
+            {IconPlus()}
+          </button>
+          <button
+            type="button"
+            class="ui-square-action-button"
             onclick={() => this.deleteActiveStickerLayer()}
             disabled={!canDeleteActiveSticker}
           >
-            Delete Active Sticker
+            {IconTrash()}
           </button>
-          <button type="button" onclick={() => this.goToThirdStage()}>
-            Next
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.goToThirdStage()}
+          >
+            {IconNext()}
           </button>
         </div>
-        <div class="stickers-menu">
+        <div class={`stickers-menu ${this.isStickersMenuOpen ? "" : "hidden"}`}>
           <div class="stickers-menu-header">Stickers</div>
           {this.loadingState === "loading" && (
             <div class="stickers-menu-status">Loading stickers...</div>
@@ -194,6 +208,11 @@ class Stage2 extends KTUComponent {
         )}
       </div>
     );
+  }
+
+  private toggleStickersMenu() {
+    this.isStickersMenuOpen = !this.isStickersMenuOpen;
+    this.reRender();
   }
 
   private async loadManifest() {

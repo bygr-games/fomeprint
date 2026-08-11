@@ -50,11 +50,12 @@ class Stage1 extends KTUComponent {
   }
 
   render(): Element {
-    const isVisible = this.currentStage() === 1;
-    const visibilityClass = isVisible ? "" : "hidden";
+    if (this.currentStage() !== 1) {
+      return <div></div>;
+    }
 
     return (
-      <div class={`panel-container left-ui stage-panel ${visibilityClass}`}>
+      <div class="panel-container left-ui stage-panel">
         <button
           type="button"
           class="ui-square-action-button"
