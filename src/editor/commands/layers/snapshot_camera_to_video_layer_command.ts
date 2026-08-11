@@ -135,6 +135,13 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
         }),
       );
 
+      DataStore.getInstance().setStore("fomeprint.cameraLayerId", null);
+      DataStore.getInstance().setStore("fomeprint.videoLayerId", videoLayer.id);
+      DataStore.getInstance().setStore(
+        "fomeprint.adjustmentShaderId",
+        adjustmentShader.id,
+      );
+
       DataStore.getInstance().setStore("fomeprint.stage", 2);
     } catch (error) {
       console.error("[snapshot] failed to capture camera frame", error);

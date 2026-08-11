@@ -14,6 +14,7 @@ import {
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
 } from "../helpers/active_helper";
+import { refreshAvailableCameras } from "../managers/camera_manager";
 
 export class NewStateCommand implements ICommand {
   historyLabel = "NewStateCommand";
@@ -23,6 +24,8 @@ export class NewStateCommand implements ICommand {
     this.payload = payload;
   }
   execute(): void {
+    refreshAvailableCameras();
+
     try {
       const autosavedState = window.localStorage.getItem("autosavedState");
       if (autosavedState) {
@@ -77,6 +80,7 @@ export class NewStateCommand implements ICommand {
     clearRedo();
     DataStore.getInstance().setStore("fomeprint.paperSize", "50x50");
     DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
+
     DataStore.getInstance().setStore(
       "fomeprint.adjustmentShaderId",
       adjustmentShader.id,
@@ -87,6 +91,10 @@ export class NewStateCommand implements ICommand {
     );
     DataStore.getInstance().setStore("fomeprint.bnwShaderId", bnwShader.id);
     DataStore.getInstance().setStore("fomeprint.cameraLayerId", cameraLayer.id);
+    DataStore.getInstance().setStore("fomeprint.videoLayerId", null);
+
+    DataStore.getInstance().setStore("fomeprint.cameraIndex", 0);
+
     DataStore.getInstance().setStore(
       "fomeprint.shaderIds",
       state.shaders
