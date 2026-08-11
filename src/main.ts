@@ -6,6 +6,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("canvasContainer")!,
     document.getElementById("topUIContainer")!,
     document.getElementById("bottomUIContainer")!,
+    document.getElementById("extraSettingsContainer")!,
   );
 });
 

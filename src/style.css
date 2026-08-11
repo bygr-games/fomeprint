@@ -112,6 +112,19 @@ body {
   vertical-align: top;
 }
 
+.extra-settings {
+  --ui-square-button-size: max(
+    1px,
+    calc(var(--ui-bar-height) - (var(--ui-bar-padding) * 2))
+  );
+  display: block;
+  text-align: center;
+  height: var(--ui-bar-height);
+  padding: var(--ui-bar-padding);
+  background-color: var(--third-color-dark);
+  overflow: hidden;
+}
+
 .stickers-menu {
   display: flex;
   flex-direction: column;

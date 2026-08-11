@@ -36,18 +36,7 @@ export class SetShaderFieldCommand implements ICommand {
         this.oldValue = (shader as any)[this.field];
       }
       (shader as any)[this.field] = this.value;
-      if (this.field === "visible") {
-        DataStore.getInstance().touch(`${this.owner}.!${this.id}`);
-      } else {
-        EventDispatcher.getInstance().dispatchEvent(
-          `${this.owner}.!` + this.id,
-          "change",
-          {
-            field: this.field,
-            value: this.value,
-          },
-        );
-      }
+      DataStore.getInstance().touch(`${this.owner}.!${this.id}`);
     }
   }
   revert(): void {

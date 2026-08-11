@@ -51,6 +51,8 @@ export class NewStateCommand implements ICommand {
       cameraLayer,
     );
 
+    const bnwShader = BnwShader.getDefaultState("editorScene");
+
     const ditheringShader = BayerDitheringShader.getDefaultState("editorScene");
     ditheringShader.pixelSize = 3;
     ditheringShader.levels = 2;
@@ -65,7 +67,7 @@ export class NewStateCommand implements ICommand {
         BackgroundLayer.getDefaultState("editorScene", "green"),
         cameraLayer,
       ],
-      shaders: [BnwShader.getDefaultState("editorScene"), ditheringShader],
+      shaders: [bnwShader, ditheringShader],
       modulators: [],
       signals: [],
       assets: {},
@@ -75,6 +77,30 @@ export class NewStateCommand implements ICommand {
     clearRedo();
     DataStore.getInstance().setStore("fomeprint.paperSize", "50x50");
     DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
+    DataStore.getInstance().setStore(
+      "fomeprint.adjustmentShaderId",
+      adjustmentShader.id,
+    );
+    DataStore.getInstance().setStore(
+      "fomeprint.bayerDitheringShaderId",
+      ditheringShader.id,
+    );
+    DataStore.getInstance().setStore("fomeprint.bnwShaderId", bnwShader.id);
+    DataStore.getInstance().setStore(
+      "fomeprint.shaderIds",
+      state.shaders
+        .map((shader) => "editorScene.shaders.!" + shader.id)
+        .concat(
+          cameraLayer.shaders.map(
+            (shader) =>
+              "editorScene.layers.!" +
+              cameraLayer.id +
+              ".shaders.!" +
+              shader.id,
+          ),
+        )
+        .join(","),
+    );
     const activeThingId = DataStore.getInstance().getStore("activeThingId");
     DataStore.getInstance().setStore("activeThingId", null);
     touchThingsById(activeThingId);

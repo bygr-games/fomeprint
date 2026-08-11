@@ -11,11 +11,13 @@ import { BottomUIComponent } from "./ui/bottom_ui";
 import { GestureManager } from "./managers/gesture_manager";
 import { MouseManager } from "./managers/mouse_manager";
 import { TouchManager } from "./managers/touch_manager";
+import { ExtraSettingsComponent } from "./ui/extra_settings";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
   topUIContainer: HTMLElement;
   bottomUIContainer: HTMLElement;
+  extraSettingsContainer: HTMLElement;
   private readonly mouseManager: MouseManager;
 
   private getPaperAspectRatio(): number {
@@ -68,6 +70,7 @@ export class FomeprintEditor {
     canvasContainer: HTMLElement,
     topUIContainer: HTMLElement,
     bottomUIContainer: HTMLElement,
+    extraSettingsContainer: HTMLElement,
   ) {
     console.log(
       "Initializing FomeprintEditor with autosaved state:",
@@ -76,6 +79,7 @@ export class FomeprintEditor {
     this.canvasContainer = canvasContainer;
     this.topUIContainer = topUIContainer;
     this.bottomUIContainer = bottomUIContainer;
+    this.extraSettingsContainer = extraSettingsContainer;
     this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
 
@@ -87,8 +91,14 @@ export class FomeprintEditor {
         resizeTo: canvasContainer,
       }),
     );
-    this.topUIContainer.appendChild(TopUIComponent({}));
+
+    this.topUIContainer.appendChild(
+      TopUIComponent({
+        binding: DataStore.getInstance().getStore("fomeprint.shaderIds"),
+      }),
+    );
     this.bottomUIContainer.appendChild(BottomUIComponent({}));
+    this.extraSettingsContainer.appendChild(ExtraSettingsComponent({}));
     if (TouchManager.hasSeveralTouchPoints()) {
       new TouchManager("editorScene", () => this.mouseManager.resetDragState());
     } else {
