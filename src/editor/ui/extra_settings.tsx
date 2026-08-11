@@ -57,6 +57,13 @@ class ExtraSettings extends KTUComponent {
           </div>
           <DebugComponent />
         </nav>
+        <div class="extra-settings-error-messages">
+          {DataStore.getInstance()
+            .getStore("fomeprint.errorMessages")
+            ?.map((message: string) => (
+              <div class="error-message">{message}</div>
+            ))}
+        </div>
       </div>
     );
   }

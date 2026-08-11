@@ -26,6 +26,8 @@ export class NewStateCommand implements ICommand {
   execute(): void {
     refreshAvailableCameras();
 
+    DataStore.getInstance().setStore("fomeprint.errorMessages", []);
+
     try {
       const autosavedState = window.localStorage.getItem("autosavedState");
       if (autosavedState) {

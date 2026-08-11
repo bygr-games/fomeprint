@@ -1,5 +1,5 @@
 import type { ICommand } from "../icommand";
-
+import { DataStore } from "fra.ktu.red-component";
 export class FireErrorMessageCommand implements ICommand {
   historyLabel = "FireErrorMessageCommand";
 
@@ -11,6 +11,10 @@ export class FireErrorMessageCommand implements ICommand {
 
   execute(): void {
     console.error(this.message);
+    const errorMessages: string[] =
+      DataStore.getInstance().getStore("fomeprint.errorMessages") || [];
+    errorMessages.push(this.message);
+    DataStore.getInstance().setStore("fomeprint.errorMessages", errorMessages);
   }
 
   revert(): void {

@@ -98,7 +98,9 @@ export class FomeprintEditor {
       }),
     );
     this.bottomUIContainer.appendChild(BottomUIComponent({}));
-    this.extraSettingsContainer.appendChild(ExtraSettingsComponent({}));
+    this.extraSettingsContainer.appendChild(
+      ExtraSettingsComponent({ binding: "fomeprint.errorMessages" }),
+    );
     if (TouchManager.hasSeveralTouchPoints()) {
       new TouchManager("editorScene", () => this.mouseManager.resetDragState());
     } else {

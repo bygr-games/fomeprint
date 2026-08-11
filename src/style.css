@@ -119,10 +119,8 @@ body {
   );
   display: block;
   text-align: center;
-  height: var(--ui-bar-height);
   padding: var(--ui-bar-padding);
   background-color: var(--third-color-dark);
-  overflow: hidden;
 }
 
 .stickers-menu {
