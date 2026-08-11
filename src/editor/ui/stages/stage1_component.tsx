@@ -6,6 +6,7 @@ import {
 import {
   DataStore,
   KTUComponent,
+  type CameraLayerState,
   type DisplayLayerState,
   type SceneState,
 } from "fra.ktu.red-component";
@@ -13,10 +14,16 @@ import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapshot_camera_to_video_layer_command";
 import { SetLayerFieldCommand } from "../../commands/layers/set_layer_field_command";
 import {
+  getThingById,
   syncLayerBoundingBoxesByActiveThingId,
   touchThingsById,
 } from "../../helpers/active_helper";
-import { IconSnapshot, IconOpenFile, IconSwap } from "../../helpers/icons";
+import {
+  IconSnapshot,
+  IconOpenFile,
+  IconSwap,
+  IconMirror,
+} from "../../helpers/icons";
 
 type CameraDeviceOption = {
   id: string;
@@ -77,6 +84,13 @@ class Stage1 extends KTUComponent {
         >
           {IconSwap()}
         </button>
+        <button
+          type="button"
+          class="ui-square-action-button"
+          onclick={() => this.toggleFlip()}
+        >
+          {IconMirror()}
+        </button>
         <input
           id="stage1-load-input"
           class="stage1-load-input hidden"
@@ -94,6 +108,13 @@ class Stage1 extends KTUComponent {
         </div>
       </div>
     );
+  }
+
+  private toggleFlip() {
+    const layer = getThingById(
+      DataStore.getInstance().getStore("fomeprint.cameraLayerId"),
+    )! as CameraLayerState;
+    executeCommand(new SetLayerFieldCommand(layer.id, "hFlip", !layer.hFlip));
   }
 
   private async swapCamera() {

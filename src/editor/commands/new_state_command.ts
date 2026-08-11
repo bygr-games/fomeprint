@@ -86,6 +86,7 @@ export class NewStateCommand implements ICommand {
       ditheringShader.id,
     );
     DataStore.getInstance().setStore("fomeprint.bnwShaderId", bnwShader.id);
+    DataStore.getInstance().setStore("fomeprint.cameraLayerId", cameraLayer.id);
     DataStore.getInstance().setStore(
       "fomeprint.shaderIds",
       state.shaders
