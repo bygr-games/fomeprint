@@ -23,7 +23,7 @@ export class SwapCameraCommand implements ICommand {
 
       executeCommand(
         new FireErrorMessageCommand(
-          `Available cameras: ${availableCameras.map((camera) => camera.label).join(", ")}`,
+          `Available cameras: ${availableCameras.map((camera) => camera.id + " - " + camera.label).join(", ")}`,
         ),
       );
 
