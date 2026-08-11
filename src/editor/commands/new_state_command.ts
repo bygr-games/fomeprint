@@ -92,6 +92,7 @@ export class NewStateCommand implements ICommand {
       ditheringShader.id,
     );
     DataStore.getInstance().setStore("fomeprint.bnwShaderId", bnwShader.id);
+    console.log("Camera layer ID:", cameraLayer.id);
     DataStore.getInstance().setStore("fomeprint.cameraLayerId", cameraLayer.id);
     DataStore.getInstance().setStore("fomeprint.videoLayerId", null);
 

@@ -34,10 +34,12 @@ export class SwapCameraCommand implements ICommand {
         "fomeprint.cameraIndex",
         nextCameraIndex,
       );
-      const layer = DataStore.getInstance().getStore("fomeprint.cameraLayerId");
+      const layerId = DataStore.getInstance().getStore(
+        "fomeprint.cameraLayerId",
+      );
 
       executeCommand(
-        new SetLayerFieldCommand(layer.id, "cameraId", nextCameraId),
+        new SetLayerFieldCommand(layerId, "cameraId", nextCameraId),
       );
     } catch (error) {
       console.error("Error swapping camera:", error);
