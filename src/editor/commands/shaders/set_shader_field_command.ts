@@ -26,10 +26,9 @@ export class SetShaderFieldCommand implements ICommand {
   }
   execute(): void {
     console.log("EXECUTE", this.id, this.field, this.value, this.owner);
-    const shaders: ShaderLayerState[] = DataStore.getInstance().getStore(
-      this.owner,
+    const shader = DataStore.getInstance().getStore(
+      `${this.owner}.!${this.id}`,
     );
-    const shader = shaders.find((shader) => shader.id === this.id);
     console.log("SHADER", shader);
     if (shader) {
       if (this.oldValue === undefined) {

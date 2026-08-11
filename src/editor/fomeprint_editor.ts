@@ -99,14 +99,12 @@ export class FomeprintEditor {
       }),
     );
 
-    this.topUIContainer.appendChild(
-      TopUIComponent({
-        binding: DataStore.getInstance().getStore("fomeprint.shaderIds"),
-      }),
-    );
+    this.topUIContainer.appendChild(TopUIComponent({}));
     this.bottomUIContainer.appendChild(BottomUIComponent({}));
     this.extraSettingsContainer.appendChild(
-      ExtraSettingsComponent({ binding: "fomeprint.errorMessages" }),
+      ExtraSettingsComponent({
+        binding: "fomeprint.errorMessages,fomeprint.adjustmentShaderId",
+      }),
     );
     if (TouchManager.hasSeveralTouchPoints()) {
       new TouchManager("editorScene", () => this.mouseManager.resetDragState());

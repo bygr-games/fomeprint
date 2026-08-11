@@ -21,12 +21,6 @@ export class SwapCameraCommand implements ICommand {
         "fomeprint.cameraIndex",
       );
 
-      executeCommand(
-        new FireErrorMessageCommand(
-          `Available cameras: ${availableCameras.map((camera) => camera.id + " - " + camera.label).join(", ")}`,
-        ),
-      );
-
       const nextCameraIndex = (cameraIndex + 1) % availableCameras.length;
       const nextCameraId = availableCameras[nextCameraIndex].id;
 
