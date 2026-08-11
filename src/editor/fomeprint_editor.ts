@@ -12,6 +12,7 @@ import { GestureManager } from "./managers/gesture_manager";
 import { MouseManager } from "./managers/mouse_manager";
 import { TouchManager } from "./managers/touch_manager";
 import { ExtraSettingsComponent } from "./ui/extra_settings";
+import { FireErrorMessageCommand } from "./commands/fomeprint/fire_error_message_command";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
@@ -82,6 +83,12 @@ export class FomeprintEditor {
     this.extraSettingsContainer = extraSettingsContainer;
     this.mouseManager = new MouseManager("editorScene");
     executeCommand(new NewStateCommand());
+
+    executeCommand(
+      new FireErrorMessageCommand(
+        "Welcome to Fomeprint! Please select a file to start editing.",
+      ),
+    );
 
     this.fitCanvasToViewport();
 
