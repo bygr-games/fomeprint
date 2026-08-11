@@ -6,6 +6,12 @@ import {
 } from "../../printing/phomemo_bluetooth_printer";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { NewStateCommand } from "../../commands/new_state_command";
+import {
+  IconBluetooth,
+  IconDownload,
+  IconPrint,
+  IconReset,
+} from "../../helpers/icons";
 
 type PaperSizeOption = {
   value: string;
@@ -64,11 +70,6 @@ class Stage3 extends KTUComponent {
     const isConnected = this.printerStatus.connection === "connected";
     const isPrinting = this.printerStatus.print === "printing";
 
-    let connectionLabel = "Connect";
-    if (this.printerStatus.connection === "connecting") {
-      connectionLabel = "Connecting...";
-    }
-
     const statusKind = this.getStatusKind();
     const selectedPaperSize = this.getSelectedPaperSize();
     const selectedPaperValue = selectedPaperSize?.value ?? "50x50";
@@ -76,89 +77,96 @@ class Stage3 extends KTUComponent {
     return (
       <div class="panel-container left-ui stage-panel">
         <div class="stage3-print-panel">
-          <div class="stage3-print-header">Phomemo (Bluetooth)</div>
-
-          <div class="stage3-paper-size-row">
-            <label for="paper-size-select" class="stage3-paper-size-label">
-              Paper Size
-            </label>
-            <select
-              id="paper-size-select"
-              class="stage3-paper-size-select"
-              onchange={(event: Event) => {
-                const target = event.target as HTMLSelectElement | null;
-                if (!target) {
-                  return;
-                }
-                this.handlePaperSizeChange(target.value);
-              }}
-            >
-              {this.paperSizes.map((paperSize) => (
-                <option
-                  value={paperSize.value}
-                  selected={paperSize.value === selectedPaperValue}
-                >
-                  {paperSize.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {this.paperSizesLoadState === "loading" && (
-            <div class="stage3-status-text">Loading paper sizes...</div>
-          )}
-
-          {this.paperSizesLoadState === "error" && (
-            <div class="stage3-warning">Could not load paper sizes.</div>
-          )}
-
-          <div class="stage3-status-row">
-            <span
-              class={`stage3-status-dot stage3-status-${statusKind}`}
-              aria-hidden="true"
-            ></span>
-            <span class="stage3-status-text">{this.statusText()}</span>
-          </div>
-
-          {!secureContext && (
-            <div class="stage3-warning">
-              Printing requires HTTPS or localhost.
-            </div>
-          )}
-
-          {secureContext && !supportsBluetooth && (
-            <div class="stage3-warning">
-              Web Bluetooth is not supported in this browser.
-            </div>
-          )}
-
           <div class="stage3-actions">
-            <button type="button" onclick={() => this.resetState()}>
-              Reset
+            <button
+              type="button"
+              class="ui-square-action-button"
+              onclick={() => this.resetState()}
+            >
+              {IconReset()}
             </button>
-            <button type="button" onclick={() => this.handleDownloadButton()}>
-              Download
+            <button
+              type="button"
+              class="ui-square-action-button"
+              onclick={() => this.handleDownloadButton()}
+            >
+              {IconDownload()}
             </button>
             {!isConnected && (
               <button
                 type="button"
+                class="ui-square-action-button"
                 onclick={() => void this.handleConnectButton()}
                 disabled={!supportsBluetooth || !secureContext || !canConnect}
               >
-                {connectionLabel}
+                {IconBluetooth()}
               </button>
             )}
 
             {isConnected && (
               <button
                 type="button"
+                class="ui-square-action-button"
                 onclick={() => void this.handlePrintButton()}
                 disabled={isPrinting}
               >
                 {isPrinting
                   ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
-                  : "Print"}
+                  : IconPrint()}
               </button>
+            )}
+            <div class="stage3-paper-size-row">
+              <label for="paper-size-select" class="stage3-paper-size-label">
+                Paper Size
+              </label>
+              <select
+                id="paper-size-select"
+                class="stage3-paper-size-select"
+                onchange={(event: Event) => {
+                  const target = event.target as HTMLSelectElement | null;
+                  if (!target) {
+                    return;
+                  }
+                  this.handlePaperSizeChange(target.value);
+                }}
+              >
+                {this.paperSizes.map((paperSize) => (
+                  <option
+                    value={paperSize.value}
+                    selected={paperSize.value === selectedPaperValue}
+                  >
+                    {paperSize.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {this.paperSizesLoadState === "loading" && (
+              <div class="stage3-status-text">Loading paper sizes...</div>
+            )}
+
+            {this.paperSizesLoadState === "error" && (
+              <div class="stage3-warning">Could not load paper sizes.</div>
+            )}
+
+            <div class="stage3-status-row">
+              <span
+                class={`stage3-status-dot stage3-status-${statusKind}`}
+                aria-hidden="true"
+              ></span>
+              <span class="stage3-status-text">{this.statusText()}</span>
+            </div>
+
+            {!secureContext && (
+              <div class="stage3-warning">
+                Printing requires HTTPS or localhost.
+              </div>
+            )}
+
+            {secureContext && !supportsBluetooth && (
+              <div class="stage3-warning">
+                Web Bluetooth is not supported in this browser.
+              </div>
             )}
           </div>
         </div>

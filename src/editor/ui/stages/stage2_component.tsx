@@ -10,7 +10,13 @@ import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint
 import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
 import { DeleteLayerCommand } from "../../commands/layers/delete_layer_command";
 import { NewStateCommand } from "../../commands/new_state_command";
-import { IconNext, IconPlus, IconReset, IconTrash } from "../../helpers/icons";
+import {
+  IconClose,
+  IconNext,
+  IconPlus,
+  IconReset,
+  IconTrash,
+} from "../../helpers/icons";
 
 type StickerCategory = {
   id: string;
@@ -84,7 +90,7 @@ class Stage2 extends KTUComponent {
             class="ui-square-action-button"
             onclick={() => this.toggleStickersMenu()}
           >
-            {IconPlus()}
+            {this.isStickersMenuOpen ? IconClose() : IconPlus()}
           </button>
           <button
             type="button"
