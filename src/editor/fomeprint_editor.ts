@@ -22,6 +22,7 @@ export class FomeprintEditor {
   bottomUIContainer: HTMLElement;
   extraSettingsContainer: HTMLElement;
   private readonly mouseManager: MouseManager;
+  private resizeFrameId: number | null = null;
 
   private getPaperAspectRatio(): number {
     const ratio = Number(
@@ -57,6 +58,20 @@ export class FomeprintEditor {
     application?.resize?.();
 
     executeCommand(new FireErrorMessageCommand("FINISHED RESIZE"));
+  };
+
+  private scheduleFitCanvasToViewport = () => {
+    if (this.resizeFrameId !== null) {
+      window.cancelAnimationFrame(this.resizeFrameId);
+      this.resizeFrameId = null;
+    }
+
+    this.resizeFrameId = window.requestAnimationFrame(() => {
+      this.resizeFrameId = window.requestAnimationFrame(() => {
+        this.resizeFrameId = null;
+        this.fitCanvasToViewport();
+      });
+    });
   };
 
   public constructor(
@@ -105,7 +120,15 @@ export class FomeprintEditor {
     } else {
       new GestureManager(this.canvasContainer, "editorScene");
     }
-    window.addEventListener("resize", this.fitCanvasToViewport);
+    window.addEventListener("resize", this.scheduleFitCanvasToViewport);
+    window.addEventListener(
+      "orientationchange",
+      this.scheduleFitCanvasToViewport,
+    );
+    window.visualViewport?.addEventListener(
+      "resize",
+      this.scheduleFitCanvasToViewport,
+    );
 
     EventDispatcher.getInstance().addEventListener(
       "fomeprint.paperAspectRatio",
