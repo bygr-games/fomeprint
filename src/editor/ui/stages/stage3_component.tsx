@@ -14,6 +14,7 @@ import {
   IconReset,
 } from "../../helpers/icons";
 import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
+import { FireErrorMessageCommand } from "../../commands/fomeprint/fire_error_message_command";
 
 class Stage3 extends KTUComponent {
   private readonly printer = getPhomemoBluetoothPrinter();
@@ -86,35 +87,38 @@ class Stage3 extends KTUComponent {
               >
                 {IconDownload()}
               </button>
-              <span
-                class={`stage3-status-dot stage3-status-${statusKind}`}
-                aria-hidden="true"
-              ></span>
-              <span class="stage3-status-text">{this.statusText()}</span>
-              {!isConnected && (
-                <button
-                  type="button"
-                  class="ui-square-action-button"
-                  onclick={() => void this.handleConnectButton()}
-                  disabled={!supportsBluetooth || !secureContext || !canConnect}
-                >
-                  {IconBluetooth()}
-                </button>
-              )}
-              {isConnected && (
-                <button
-                  type="button"
-                  class="ui-square-action-button"
-                  onclick={() => void this.handlePrintButton()}
-                  disabled={isPrinting}
-                >
-                  {isPrinting
-                    ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
-                    : IconPrint()}
-                </button>
-              )}
+              <div class="stage3-connection-group">
+                <span
+                  class={`stage3-status-dot stage3-status-${statusKind}`}
+                  aria-hidden="true"
+                ></span>
+                <span class="stage3-status-text">{this.statusText()}</span>
+                {!isConnected && (
+                  <button
+                    type="button"
+                    class="ui-square-action-button"
+                    onclick={() => void this.handleConnectButton()}
+                    disabled={
+                      !supportsBluetooth || !secureContext || !canConnect
+                    }
+                  >
+                    {IconBluetooth()}
+                  </button>
+                )}
+                {isConnected && (
+                  <button
+                    type="button"
+                    class="ui-square-action-button"
+                    onclick={() => void this.handlePrintButton()}
+                    disabled={isPrinting}
+                  >
+                    {isPrinting
+                      ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
+                      : IconPrint()}
+                  </button>
+                )}
+              </div>
             </div>
-            <div class="stage3-status-row"></div>
             {!secureContext && (
               <div class="stage3-warning">
                 Printing requires HTTPS or localhost.
@@ -172,10 +176,12 @@ class Stage3 extends KTUComponent {
         await this.printer.connect();
       }
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to connect to printer.";
+      const message = "Failed to connect to printer";
+      executeCommand(
+        new FireErrorMessageCommand(
+          error instanceof Error ? error.message : message,
+        ),
+      );
       console.error("Phomemo connect error:", error);
       this.printerStatus = {
         ...this.printerStatus,

@@ -124,6 +124,36 @@ body {
   margin-left: auto;
 }
 
+.bottom-ui .stage3-connection-group {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bottom-ui .stage3-status-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background-color: #f59e0b;
+}
+
+.bottom-ui .stage3-status-ok {
+  background-color: #22c55e;
+}
+
+.bottom-ui .stage3-status-busy {
+  background-color: #f59e0b;
+}
+
+.bottom-ui .stage3-status-warn {
+  background-color: #ef4444;
+}
+
+.bottom-ui .stage3-status-text {
+  white-space: nowrap;
+}
+
 .extra-settings {
   --ui-square-button-size: max(
     1px,

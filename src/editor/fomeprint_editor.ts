@@ -87,11 +87,7 @@ export class FomeprintEditor {
     DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
     executeCommand(new NewStateCommand());
 
-    executeCommand(
-      new FireErrorMessageCommand(
-        "Welcome to Fomeprint! Please select a file to start editing.",
-      ),
-    );
+    executeCommand(new FireErrorMessageCommand("Welcome to Fomeprint!"));
 
     this.fitCanvasToViewport();
 
