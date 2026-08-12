@@ -1,11 +1,12 @@
 import jsx from "./jsx";
-import { KTUComponent } from "fra.ktu.red-component";
+import { DataStore, KTUComponent } from "fra.ktu.red-component";
 import { executeCommand } from "../../ktu/helpers/commands_manager";
 import { NewStateCommand } from "../commands/new_state_command";
 import { SetFomeprintStageCommand } from "../commands/fomeprint/set_fomeprint_stage_command";
 import { FireErrorMessageCommand } from "../commands/fomeprint/fire_error_message_command";
 import type { SceneState } from "fra.ktu.red-component";
 import { IconOpenFile, IconReset } from "../helpers/icons";
+import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
 
 class TopUI extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -103,6 +104,7 @@ class TopUI extends KTUComponent {
 
       executeCommand(new NewStateCommand(sceneState));
       executeCommand(new SetFomeprintStageCommand(2));
+      this.fitCanvasToCurrentPaperAspectRatio();
     };
 
     reader.onerror = () => {
@@ -114,8 +116,16 @@ class TopUI extends KTUComponent {
     reader.readAsText(file);
   }
 
+  private fitCanvasToCurrentPaperAspectRatio() {
+    const aspectRatio = Number(
+      DataStore.getInstance().getStore("fomeprint.paperAspectRatio"),
+    );
+    executeCommand(new UpdateEditorSceneSizeForAspectRatioCommand(aspectRatio));
+  }
+
   private resetState() {
     executeCommand(new NewStateCommand());
+    this.fitCanvasToCurrentPaperAspectRatio();
   }
 }
 
