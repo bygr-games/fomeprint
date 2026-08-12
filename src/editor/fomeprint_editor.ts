@@ -113,33 +113,6 @@ export class FomeprintEditor {
       this.fitCanvasToViewport,
     );
 
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene.width",
-      "update",
-      () => {
-        const state = DataStore.getInstance().getStore(
-          "editorScene",
-        ) as SceneState;
-        this.canvasContainer.style.width = state.width + "px";
-        const application = DataStore.getInstance().getStore("application");
-        application.resize();
-        DataStore.getInstance().touchIds("editorScene");
-      },
-    );
-
-    EventDispatcher.getInstance().addEventListener(
-      "editorScene.height",
-      "update",
-      () => {
-        const state = DataStore.getInstance().getStore(
-          "editorScene",
-        ) as SceneState;
-        this.canvasContainer.style.height = state.height + "px";
-        const application = DataStore.getInstance().getStore("application");
-        application.resize();
-        DataStore.getInstance().touchIds("editorScene");
-      },
-    );
     setupStore();
   }
 }

@@ -12,25 +12,52 @@ export class SwapCameraCommand implements ICommand {
   historyLabel = "Swap Camera";
 
   execute(): void {
+    void this.swapCamera();
+  }
+
+  private async swapCamera(): Promise<void> {
     try {
-      refreshAvailableCameras();
+      await refreshAvailableCameras();
 
-      const availableCameras: CameraDeviceOption[] =
-        DataStore.getInstance().getStore("fomeprint.availableCameras");
-      const cameraIndex: number = DataStore.getInstance().getStore(
-        "fomeprint.cameraIndex",
+      const availableCameras =
+        (DataStore.getInstance().getStore("fomeprint.availableCameras") as
+          | CameraDeviceOption[]
+          | undefined) ?? [];
+
+      if (availableCameras.length < 1) {
+        executeCommand(new FireErrorMessageCommand("No camera available."));
+        return;
+      }
+
+      const currentIndexRaw = Number(
+        DataStore.getInstance().getStore("fomeprint.cameraIndex"),
       );
+      const currentIndex = Number.isFinite(currentIndexRaw)
+        ? Math.max(0, Math.floor(currentIndexRaw))
+        : 0;
 
-      const nextCameraIndex = (cameraIndex + 1) % availableCameras.length;
-      const nextCameraId = availableCameras[nextCameraIndex].id;
+      const nextCameraIndex = (currentIndex + 1) % availableCameras.length;
+      const nextCameraId = availableCameras[nextCameraIndex]?.id;
+      if (!nextCameraId) {
+        executeCommand(
+          new FireErrorMessageCommand("Could not resolve next camera."),
+        );
+        return;
+      }
 
       DataStore.getInstance().setStore(
         "fomeprint.cameraIndex",
         nextCameraIndex,
       );
-      const layerId = DataStore.getInstance().getStore(
-        "fomeprint.cameraLayerId",
+      const layerId = Number(
+        DataStore.getInstance().getStore("fomeprint.cameraLayerId"),
       );
+      if (!Number.isFinite(layerId)) {
+        executeCommand(
+          new FireErrorMessageCommand("Camera layer is not available."),
+        );
+        return;
+      }
 
       executeCommand(
         new SetLayerFieldCommand(layerId, "cameraId", nextCameraId),
