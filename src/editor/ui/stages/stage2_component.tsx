@@ -21,7 +21,6 @@ import {
   addUploadedSticker,
   getSelectedCategory,
   removeUploadedSticker,
-  saveUploadedStickersToStorage,
   uploadedCategoryId,
   uploadedCategoryLabel,
   type StickerCategory,
@@ -65,7 +64,7 @@ class Stage2 extends KTUComponent {
 
     return (
       <div class="panel-container left-ui stage-panel">
-        <div class="stage2-actions">
+        <div class="stage-actions stage2-actions">
           <button
             type="button"
             class="ui-square-action-button"

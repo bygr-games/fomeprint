@@ -47,34 +47,36 @@ class Stage1 extends KTUComponent {
 
     return (
       <div class="panel-container left-ui stage-panel">
-        <button
-          type="button"
-          class="ui-square-action-button"
-          onclick={() => this.openLoadFilePicker()}
-        >
-          {IconOpenFile()}
-        </button>
-        <button
-          type="button"
-          class="ui-square-action-button"
-          onclick={() => this.swapCamera()}
-        >
-          {IconSwap()}
-        </button>
-        <button
-          type="button"
-          class="ui-square-action-button"
-          onclick={() => this.toggleFlip()}
-        >
-          {IconMirror()}
-        </button>
-        <button
-          type="button"
-          class="ui-square-action-button"
-          onclick={() => this.snapshotCameraLayer()}
-        >
-          {IconSnapshot()}
-        </button>
+        <div class="stage-actions stage1-actions">
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.openLoadFilePicker()}
+          >
+            {IconOpenFile()}
+          </button>
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.swapCamera()}
+          >
+            {IconSwap()}
+          </button>
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.toggleFlip()}
+          >
+            {IconMirror()}
+          </button>
+          <button
+            type="button"
+            class="ui-square-action-button"
+            onclick={() => this.snapshotCameraLayer()}
+          >
+            {IconSnapshot()}
+          </button>
+        </div>
         <input
           id="stage1-load-input"
           class="stage1-load-input hidden"

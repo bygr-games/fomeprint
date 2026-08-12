@@ -103,13 +103,20 @@ body {
 
 .bottom-ui .stage-panel {
   display: block;
-  text-align: center;
+  text-align: left;
   height: 100%;
+  width: 100%;
 }
 
-.bottom-ui .stage-panel .ui-square-action-button {
-  margin-inline: 0.25rem;
-  vertical-align: top;
+.bottom-ui .stage-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.bottom-ui .stage-actions > .ui-square-action-button:last-child {
+  margin-left: auto;
 }
 
 .extra-settings {

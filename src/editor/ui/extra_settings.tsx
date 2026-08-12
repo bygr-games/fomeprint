@@ -1,6 +1,5 @@
 import jsx from "./jsx";
 import { DataStore, KTUComponent } from "fra.ktu.red-component";
-import { DebugComponent } from "./debug_component";
 import { AdjustmentBrightnessControlComponent } from "./controls/adjustment_brightness_control";
 import { AdjustmentContrastControlComponent } from "./controls/adjustment_contrast_control";
 import { BayerPixelSizeControlComponent } from "./controls/bayer_pixel_size_control";
@@ -8,6 +7,8 @@ import { getShaderParentLayerId } from "../helpers/active_helper";
 import { PAPER_SIZES } from "../helpers/paper_helper";
 import { executeCommand } from "../../ktu/helpers/commands_manager";
 import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
+import { ToggleBnwCommand } from "../commands/shaders/toggle_bnw_command";
+import { ToggleBayerDitheringCommand } from "../commands/shaders/toggle_bayer_dithering_command";
 
 class ExtraSettings extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -73,7 +74,12 @@ class ExtraSettings extends KTUComponent {
               )
             }
           />
-          <DebugComponent />
+          <button type="button" onclick={() => this.toggleBnw()}>
+            Toggle BnW Filter
+          </button>
+          <button type="button" onclick={() => this.toggleBayerDithering()}>
+            Toggle Bayer Dithering
+          </button>
         </nav>
         <div class="extra-settings-error-messages">
           {DataStore.getInstance()
@@ -96,6 +102,13 @@ class ExtraSettings extends KTUComponent {
     executeCommand(
       new UpdateEditorSceneSizeForAspectRatioCommand(selected.aspectRatio),
     );
+  }
+  private toggleBnw() {
+    executeCommand(new ToggleBnwCommand("editorScene"));
+  }
+
+  private toggleBayerDithering() {
+    executeCommand(new ToggleBayerDitheringCommand("editorScene"));
   }
 }
 

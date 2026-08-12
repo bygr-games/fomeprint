@@ -62,43 +62,44 @@ class Stage3 extends KTUComponent {
       <div class="panel-container left-ui stage-panel">
         <div class="stage3-print-panel">
           <div class="stage3-actions">
-            <button
-              type="button"
-              class="ui-square-action-button"
-              onclick={() => this.resetState()}
-            >
-              {IconReset()}
-            </button>
-            <button
-              type="button"
-              class="ui-square-action-button"
-              onclick={() => this.handleDownloadButton()}
-            >
-              {IconDownload()}
-            </button>
-            {!isConnected && (
+            <div class="stage-actions stage3-action-buttons">
               <button
                 type="button"
                 class="ui-square-action-button"
-                onclick={() => void this.handleConnectButton()}
-                disabled={!supportsBluetooth || !secureContext || !canConnect}
+                onclick={() => this.resetState()}
               >
-                {IconBluetooth()}
+                {IconReset()}
               </button>
-            )}
-            {isConnected && (
               <button
                 type="button"
                 class="ui-square-action-button"
-                onclick={() => void this.handlePrintButton()}
-                disabled={isPrinting}
+                onclick={() => this.handleDownloadButton()}
               >
-                {isPrinting
-                  ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
-                  : IconPrint()}
+                {IconDownload()}
               </button>
-            )}
-            s
+              {!isConnected && (
+                <button
+                  type="button"
+                  class="ui-square-action-button"
+                  onclick={() => void this.handleConnectButton()}
+                  disabled={!supportsBluetooth || !secureContext || !canConnect}
+                >
+                  {IconBluetooth()}
+                </button>
+              )}
+              {isConnected && (
+                <button
+                  type="button"
+                  class="ui-square-action-button"
+                  onclick={() => void this.handlePrintButton()}
+                  disabled={isPrinting}
+                >
+                  {isPrinting
+                    ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
+                    : IconPrint()}
+                </button>
+              )}
+            </div>
             <div class="stage3-status-row">
               <span
                 class={`stage3-status-dot stage3-status-${statusKind}`}
