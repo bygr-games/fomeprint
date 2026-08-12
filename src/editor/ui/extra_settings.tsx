@@ -22,32 +22,39 @@ class ExtraSettings extends KTUComponent {
         <div class="extra-settings-content">
           <h3 class="extra-settings-title">Extra Settings</h3>
           <nav class="extra-settings-menu" aria-label="Extra settings menu">
-            <label for="paper-size-select" class="stage3-paper-size-label">
-              Paper Size
-            </label>
-            <select
-              id="paper-size-select"
-              class="stage3-paper-size-select"
-              onchange={(event: Event) => {
-                const target = event.target as HTMLSelectElement | null;
-                if (!target) {
-                  return;
-                }
-                this.handlePaperSizeChange(target.value);
-              }}
-            >
-              {PAPER_SIZES.map((paperSize) => (
-                <option
-                  value={paperSize.value}
-                  selected={
-                    paperSize.value ===
-                    DataStore.getInstance().getStore("fomeprint.selectedPaper")
+            <div class="stage-control-row">
+              <label
+                for="paper-size-select"
+                class="stage-control-label stage3-paper-size-label"
+              >
+                Paper Size
+              </label>
+              <select
+                id="paper-size-select"
+                class="stage3-paper-size-select"
+                onchange={(event: Event) => {
+                  const target = event.target as HTMLSelectElement | null;
+                  if (!target) {
+                    return;
                   }
-                >
-                  {paperSize.label}
-                </option>
-              ))}
-            </select>
+                  this.handlePaperSizeChange(target.value);
+                }}
+              >
+                {PAPER_SIZES.map((paperSize) => (
+                  <option
+                    value={paperSize.value}
+                    selected={
+                      paperSize.value ===
+                      DataStore.getInstance().getStore(
+                        "fomeprint.selectedPaper",
+                      )
+                    }
+                  >
+                    {paperSize.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <AdjustmentBrightnessControlComponent
               binding={
                 "editorScene.layers.!" +

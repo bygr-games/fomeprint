@@ -175,6 +175,23 @@ body {
   text-align: left;
 }
 
+.extra-settings .stage-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.extra-settings .stage-control-label {
+  margin-right: auto;
+  text-align: left;
+}
+
+.extra-settings .stage-control-value {
+  min-width: 2ch;
+  text-align: center;
+}
+
 .stickers-menu {
   display: flex;
   flex-direction: column;
