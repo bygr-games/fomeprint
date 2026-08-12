@@ -89,7 +89,11 @@ export class FomeprintEditor {
       }),
     );
 
-    this.topUIContainer.appendChild(TopUIComponent({}));
+    this.topUIContainer.appendChild(
+      TopUIComponent({
+        binding: "fomeprint.stage",
+      }),
+    );
     this.bottomUIContainer.appendChild(BottomUIComponent({}));
     this.extraSettingsContainer.appendChild(
       ExtraSettingsComponent({

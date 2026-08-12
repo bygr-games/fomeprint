@@ -15,6 +15,8 @@ class TopUI extends KTUComponent {
   }
 
   render(): Element {
+    const isResetDisabled = this.currentStage() === 1;
+
     return (
       <div class="top-ui">
         <div class="top-ui-content">
@@ -34,6 +36,7 @@ class TopUI extends KTUComponent {
             class="ui-square-action-button top-ui-corner-button top-ui-corner-button-right"
             onclick={() => this.resetState()}
             aria-label="Reset scene"
+            disabled={isResetDisabled}
           >
             {IconReset()}
           </button>
@@ -123,7 +126,19 @@ class TopUI extends KTUComponent {
     executeCommand(new UpdateEditorSceneSizeForAspectRatioCommand(aspectRatio));
   }
 
+  private currentStage(): number {
+    const stage = Number(this.bindingData["fomeprint.stage"]);
+    if (stage === 1 || stage === 2 || stage === 3) {
+      return stage;
+    }
+    return 1;
+  }
+
   private resetState() {
+    if (this.currentStage() === 1) {
+      return;
+    }
+
     executeCommand(new NewStateCommand());
     this.fitCanvasToCurrentPaperAspectRatio();
   }
