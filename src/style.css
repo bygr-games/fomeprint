@@ -160,9 +160,19 @@ body {
     calc(var(--ui-bar-height) - (var(--ui-bar-padding) * 2))
   );
   display: block;
-  text-align: center;
   padding: var(--ui-bar-padding);
   background-color: var(--third-color-dark);
+}
+
+.extra-settings-content {
+  width: min(100%, 600px);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.extra-settings-title {
+  margin: 0 0 0.5rem;
+  text-align: left;
 }
 
 .stickers-menu {

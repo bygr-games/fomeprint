@@ -19,74 +19,77 @@ class ExtraSettings extends KTUComponent {
     console.log("ExtraSettings render, binding:", this.bindingData);
     return (
       <div class="extra-settings">
-        <nav class="extra-settings-menu" aria-label="Extra settings menu">
-          <label for="paper-size-select" class="stage3-paper-size-label">
-            Paper Size
-          </label>
-          <select
-            id="paper-size-select"
-            class="stage3-paper-size-select"
-            onchange={(event: Event) => {
-              const target = event.target as HTMLSelectElement | null;
-              if (!target) {
-                return;
-              }
-              this.handlePaperSizeChange(target.value);
-            }}
-          >
-            {PAPER_SIZES.map((paperSize) => (
-              <option
-                value={paperSize.value}
-                selected={
-                  paperSize.value ===
-                  DataStore.getInstance().getStore("fomeprint.selectedPaper")
+        <div class="extra-settings-content">
+          <h3 class="extra-settings-title">Extra Settings</h3>
+          <nav class="extra-settings-menu" aria-label="Extra settings menu">
+            <label for="paper-size-select" class="stage3-paper-size-label">
+              Paper Size
+            </label>
+            <select
+              id="paper-size-select"
+              class="stage3-paper-size-select"
+              onchange={(event: Event) => {
+                const target = event.target as HTMLSelectElement | null;
+                if (!target) {
+                  return;
                 }
-              >
-                {paperSize.label}
-              </option>
-            ))}
-          </select>
-          <AdjustmentBrightnessControlComponent
-            binding={
-              "editorScene.layers.!" +
-              getShaderParentLayerId(
-                this.bindingData["fomeprint.adjustmentShaderId"],
-              ) +
-              ".shaders.!" +
-              DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
-            }
-          />
-          <AdjustmentContrastControlComponent
-            binding={
-              "editorScene.layers.!" +
-              getShaderParentLayerId(
-                this.bindingData["fomeprint.adjustmentShaderId"],
-              ) +
-              ".shaders.!" +
-              DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
-            }
-          />
-          <BayerPixelSizeControlComponent
-            binding={
-              "editorScene.shaders.!" +
-              DataStore.getInstance().getStore(
-                "fomeprint.bayerDitheringShaderId",
-              )
-            }
-          />
-          <button type="button" onclick={() => this.toggleBnw()}>
-            Toggle BnW Filter
-          </button>
-          <button type="button" onclick={() => this.toggleBayerDithering()}>
-            Toggle Bayer Dithering
-          </button>
-        </nav>
-        <div class="extra-settings-error-messages">
-          {DataStore.getInstance()
-            .getStore("fomeprint.errorMessages")
-            ?.map((message: string) => (
-              <div class="error-message">{message}</div>
-            ))}
+                this.handlePaperSizeChange(target.value);
+              }}
+            >
+              {PAPER_SIZES.map((paperSize) => (
+                <option
+                  value={paperSize.value}
+                  selected={
+                    paperSize.value ===
+                    DataStore.getInstance().getStore("fomeprint.selectedPaper")
+                  }
+                >
+                  {paperSize.label}
+                </option>
+              ))}
+            </select>
+            <AdjustmentBrightnessControlComponent
+              binding={
+                "editorScene.layers.!" +
+                getShaderParentLayerId(
+                  this.bindingData["fomeprint.adjustmentShaderId"],
+                ) +
+                ".shaders.!" +
+                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
+              }
+            />
+            <AdjustmentContrastControlComponent
+              binding={
+                "editorScene.layers.!" +
+                getShaderParentLayerId(
+                  this.bindingData["fomeprint.adjustmentShaderId"],
+                ) +
+                ".shaders.!" +
+                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
+              }
+            />
+            <BayerPixelSizeControlComponent
+              binding={
+                "editorScene.shaders.!" +
+                DataStore.getInstance().getStore(
+                  "fomeprint.bayerDitheringShaderId",
+                )
+              }
+            />
+            <button type="button" onclick={() => this.toggleBnw()}>
+              Toggle BnW Filter
+            </button>
+            <button type="button" onclick={() => this.toggleBayerDithering()}>
+              Toggle Bayer Dithering
+            </button>
+          </nav>
+          <div class="extra-settings-error-messages">
+            {DataStore.getInstance()
+              .getStore("fomeprint.errorMessages")
+              ?.map((message: string) => (
+                <div class="error-message">{message}</div>
+              ))}
+          </div>
         </div>
       </div>
     );
