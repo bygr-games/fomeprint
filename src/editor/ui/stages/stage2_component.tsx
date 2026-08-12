@@ -9,14 +9,7 @@ import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 import { CreateStickerVideoLayerCommand } from "../../commands/layers/create_sticker_video_layer_command";
 import { DeleteLayerCommand } from "../../commands/layers/delete_layer_command";
-import { NewStateCommand } from "../../commands/new_state_command";
-import {
-  IconClose,
-  IconNext,
-  IconPlus,
-  IconReset,
-  IconTrash,
-} from "../../helpers/icons";
+import { IconClose, IconNext, IconPlus, IconTrash } from "../../helpers/icons";
 import {
   addUploadedSticker,
   getSelectedCategory,
@@ -65,13 +58,6 @@ class Stage2 extends KTUComponent {
     return (
       <div class="panel-container left-ui stage-panel">
         <div class="stage-actions stage2-actions">
-          <button
-            type="button"
-            class="ui-square-action-button"
-            onclick={() => this.resetState()}
-          >
-            {IconReset()}
-          </button>
           <button
             type="button"
             class="ui-square-action-button"
@@ -352,10 +338,6 @@ class Stage2 extends KTUComponent {
     }
 
     executeCommand(new DeleteLayerCommand(activeStickerLayer.id));
-  }
-
-  private resetState() {
-    executeCommand(new NewStateCommand());
   }
 }
 

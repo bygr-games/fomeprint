@@ -5,13 +5,7 @@ import {
   type PhomemoPrinterStatus,
 } from "../../printing/phomemo_bluetooth_printer";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
-import { NewStateCommand } from "../../commands/new_state_command";
-import {
-  IconBack,
-  IconDownload,
-  IconPrint,
-  IconReset,
-} from "../../helpers/icons";
+import { IconBack, IconDownload, IconPrint } from "../../helpers/icons";
 import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 import { FireErrorMessageCommand } from "../../commands/fomeprint/fire_error_message_command";
 
@@ -64,13 +58,6 @@ class Stage3 extends KTUComponent {
         <div class="stage3-print-panel">
           <div class="stage3-actions">
             <div class="stage-actions stage3-action-buttons">
-              <button
-                type="button"
-                class="ui-square-action-button"
-                onclick={() => this.resetState()}
-              >
-                {IconReset()}
-              </button>
               <button
                 type="button"
                 class="ui-square-action-button"
@@ -303,10 +290,6 @@ class Stage3 extends KTUComponent {
     ].join("-");
 
     return `fomeprint-${timestamp}`;
-  }
-
-  private resetState() {
-    executeCommand(new NewStateCommand());
   }
 }
 
