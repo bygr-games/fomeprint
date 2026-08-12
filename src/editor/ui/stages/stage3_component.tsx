@@ -176,7 +176,7 @@ class Stage3 extends KTUComponent {
         await this.printer.connect();
       }
     } catch (error) {
-      const message = "Failed to connect to printer";
+      const message = "Connection Error";
       executeCommand(
         new FireErrorMessageCommand(
           error instanceof Error ? error.message : message,

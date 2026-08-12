@@ -83,13 +83,32 @@ class ExtraSettings extends KTUComponent {
                 )
               }
             />
-            <button type="button" onclick={() => this.toggleBnw()}>
-              Toggle BnW Filter
-            </button>
-            <button type="button" onclick={() => this.toggleBayerDithering()}>
-              Toggle Bayer Dithering
-            </button>
+            <div class="stage-control-row">
+              <label for="bnw-toggle" class="stage-control-label">
+                BnW Filter
+              </label>
+              <input
+                id="bnw-toggle"
+                class="extra-settings-toggle"
+                type="checkbox"
+                checked={this.isBnwEnabled()}
+                onchange={() => this.toggleBnw()}
+              />
+            </div>
+            <div class="stage-control-row">
+              <label for="bayer-toggle" class="stage-control-label">
+                Bayer Dithering
+              </label>
+              <input
+                id="bayer-toggle"
+                class="extra-settings-toggle"
+                type="checkbox"
+                checked={this.isBayerDitheringEnabled()}
+                onchange={() => this.toggleBayerDithering()}
+              />
+            </div>
           </nav>
+          <h3 class="extra-settings-title">Output Log</h3>
           <div class="extra-settings-error-messages">
             {DataStore.getInstance()
               .getStore("fomeprint.errorMessages")
@@ -119,6 +138,22 @@ class ExtraSettings extends KTUComponent {
 
   private toggleBayerDithering() {
     executeCommand(new ToggleBayerDitheringCommand("editorScene"));
+  }
+
+  private isBnwEnabled(): boolean {
+    const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
+      | Array<{ type?: string; visible?: boolean }>
+      | undefined;
+    const shader = shaders?.find((item) => item.type === "bnw");
+    return shader?.visible !== false;
+  }
+
+  private isBayerDitheringEnabled(): boolean {
+    const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
+      | Array<{ type?: string; visible?: boolean }>
+      | undefined;
+    const shader = shaders?.find((item) => item.type === "bayer_dithering");
+    return shader?.visible !== false;
   }
 }
 

@@ -38,6 +38,14 @@ body {
   color: #000;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  text-transform: inherit;
+}
+
 .hidden {
   display: none !important;
 }
@@ -49,7 +57,7 @@ body {
   );
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   height: var(--ui-bar-height);
   padding: var(--ui-bar-padding);
   background-color: var(--third-color-dark);
@@ -190,6 +198,16 @@ body {
 .extra-settings .stage-control-value {
   min-width: 2ch;
   text-align: center;
+}
+
+.extra-settings-toggle {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.extra-settings-error-messages,
+.extra-settings-error-messages .error-message {
+  text-align: left;
 }
 
 .stickers-menu {
