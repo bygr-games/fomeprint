@@ -7,11 +7,13 @@ import {
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { NewStateCommand } from "../../commands/new_state_command";
 import {
+  IconBack,
   IconBluetooth,
   IconDownload,
   IconPrint,
   IconReset,
 } from "../../helpers/icons";
+import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 
 class Stage3 extends KTUComponent {
   private readonly printer = getPhomemoBluetoothPrinter();
@@ -73,10 +75,22 @@ class Stage3 extends KTUComponent {
               <button
                 type="button"
                 class="ui-square-action-button"
+                onclick={() => this.goBack()}
+              >
+                {IconBack()}
+              </button>
+              <button
+                type="button"
+                class="ui-square-action-button"
                 onclick={() => this.handleDownloadButton()}
               >
                 {IconDownload()}
               </button>
+              <span
+                class={`stage3-status-dot stage3-status-${statusKind}`}
+                aria-hidden="true"
+              ></span>
+              <span class="stage3-status-text">{this.statusText()}</span>
               {!isConnected && (
                 <button
                   type="button"
@@ -100,13 +114,7 @@ class Stage3 extends KTUComponent {
                 </button>
               )}
             </div>
-            <div class="stage3-status-row">
-              <span
-                class={`stage3-status-dot stage3-status-${statusKind}`}
-                aria-hidden="true"
-              ></span>
-              <span class="stage3-status-text">{this.statusText()}</span>
-            </div>
+            <div class="stage3-status-row"></div>
             {!secureContext && (
               <div class="stage3-warning">
                 Printing requires HTTPS or localhost.
@@ -121,6 +129,10 @@ class Stage3 extends KTUComponent {
         </div>
       </div>
     );
+  }
+
+  private goBack() {
+    executeCommand(new SetFomeprintStageCommand(2));
   }
 
   private statusText(): string {

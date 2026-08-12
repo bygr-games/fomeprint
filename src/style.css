@@ -26,7 +26,11 @@
 
 body {
   margin: 0;
-  font-family: sans-serif;
+  font-family: "Silkscreen", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 18px;
+  text-transform: uppercase;
   background-color: var(--third-color-darker);
   background-image: url("/bkg1.png");
   background-repeat: repeat;
@@ -105,7 +109,8 @@ body {
   display: block;
   text-align: left;
   height: 100%;
-  width: 100%;
+  width: min(100%, 600px);
+  margin-inline: auto;
 }
 
 .bottom-ui .stage-actions {
