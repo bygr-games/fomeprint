@@ -12,6 +12,7 @@ import { FireErrorMessageCommand } from "../../commands/fomeprint/fire_error_mes
 class Stage3 extends KTUComponent {
   private readonly printer = getPhomemoBluetoothPrinter();
   private printerStatus: PhomemoPrinterStatus;
+  private statusLoggingIntervalId: number | null = null;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -182,16 +183,8 @@ class Stage3 extends KTUComponent {
       return;
     }
 
-    let statusIntervalId: number | null = null;
     try {
-      statusIntervalId = window.setInterval(() => {
-        const status = this.printer.getStatus();
-        executeCommand(
-          new FireErrorMessageCommand(
-            `Printer status: ${JSON.stringify(status)}`,
-          ),
-        );
-      }, 500);
+      this.startStatusLoggingUntilDisconnected();
 
       await this.printer.printCanvas(canvas);
       void this.disconnectAfterPrintSettles();
@@ -204,11 +197,35 @@ class Stage3 extends KTUComponent {
         message,
       };
       this.reRender();
-    } finally {
-      if (statusIntervalId !== null) {
-        window.clearInterval(statusIntervalId);
-      }
+      this.stopStatusLogging();
     }
+  }
+
+  private startStatusLoggingUntilDisconnected(): void {
+    if (this.statusLoggingIntervalId !== null) {
+      return;
+    }
+
+    this.statusLoggingIntervalId = window.setInterval(() => {
+      const status = this.printer.getStatus();
+      executeCommand(
+        new FireErrorMessageCommand(
+          `Printer status: ${JSON.stringify(status)}`,
+        ),
+      );
+
+      if (status.connection === "disconnected") {
+        this.stopStatusLogging();
+      }
+    }, 500);
+  }
+
+  private stopStatusLogging(): void {
+    if (this.statusLoggingIntervalId === null) {
+      return;
+    }
+    window.clearInterval(this.statusLoggingIntervalId);
+    this.statusLoggingIntervalId = null;
   }
 
   private async disconnectAfterPrintSettles(): Promise<void> {
