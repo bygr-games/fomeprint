@@ -182,7 +182,17 @@ class Stage3 extends KTUComponent {
       return;
     }
 
+    let statusIntervalId: number | null = null;
     try {
+      statusIntervalId = window.setInterval(() => {
+        const status = this.printer.getStatus();
+        executeCommand(
+          new FireErrorMessageCommand(
+            `Printer status: ${JSON.stringify(status)}`,
+          ),
+        );
+      }, 500);
+
       await this.printer.printCanvas(canvas);
       void this.disconnectAfterPrintSettles();
     } catch (error) {
@@ -194,6 +204,10 @@ class Stage3 extends KTUComponent {
         message,
       };
       this.reRender();
+    } finally {
+      if (statusIntervalId !== null) {
+        window.clearInterval(statusIntervalId);
+      }
     }
   }
 
