@@ -15,11 +15,13 @@ import {
   touchThingsById,
 } from "../helpers/active_helper";
 import { refreshAvailableCameras } from "../managers/camera_manager";
+import { getViewportFittedSize } from "../helpers/viewport_fit";
 
 export class NewStateCommand implements ICommand {
   historyLabel = "NewStateCommand";
   undoable?: boolean | undefined = false;
   payload?: SceneState;
+
   constructor(payload?: SceneState) {
     this.payload = payload;
   }
@@ -63,10 +65,13 @@ export class NewStateCommand implements ICommand {
     ditheringShader.levels = 2;
     ditheringShader.matrixSize = 32;
 
+    const defaultPaperAspectRatio = 1;
+    const fittedSize = getViewportFittedSize(defaultPaperAspectRatio);
+
     const state: SceneState = {
       name: getStartingName(),
-      width: 1000,
-      height: 1000,
+      width: fittedSize.width,
+      height: fittedSize.height,
       duration: 1,
       layers: [
         BackgroundLayer.getDefaultState("editorScene", "green"),
@@ -81,7 +86,10 @@ export class NewStateCommand implements ICommand {
     clearCommands();
     clearRedo();
     DataStore.getInstance().setStore("fomeprint.paperSize", "50x50");
-    DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
+    DataStore.getInstance().setStore(
+      "fomeprint.paperAspectRatio",
+      defaultPaperAspectRatio,
+    );
 
     DataStore.getInstance().setStore(
       "fomeprint.adjustmentShaderId",

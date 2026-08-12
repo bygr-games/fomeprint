@@ -14,6 +14,7 @@ import { TouchManager } from "./managers/touch_manager";
 import { ExtraSettingsComponent } from "./ui/extra_settings";
 import { FireErrorMessageCommand } from "./commands/fomeprint/fire_error_message_command";
 import { setupStore } from "./managers/store_manager";
+import { getViewportFittedSize } from "./helpers/viewport_fit";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
@@ -33,20 +34,8 @@ export class FomeprintEditor {
   }
 
   private fitCanvasToViewport = () => {
-    const viewportWidth = Math.max(1, window.innerWidth);
-    const viewportHeight = Math.max(1, window.innerHeight);
     const aspectRatio = this.getPaperAspectRatio();
-
-    let width = viewportWidth;
-    let height = Math.round(width / aspectRatio);
-
-    if (height > viewportHeight) {
-      height = viewportHeight;
-      width = Math.round(height * aspectRatio);
-    }
-
-    width = Math.max(1, width);
-    height = Math.max(1, height);
+    const { width, height } = getViewportFittedSize(aspectRatio);
 
     this.canvasContainer.style.width = width + "px";
     this.canvasContainer.style.height = height + "px";
@@ -66,6 +55,8 @@ export class FomeprintEditor {
       | { resize?: () => void }
       | undefined;
     application?.resize?.();
+
+    executeCommand(new FireErrorMessageCommand("FINISHED RESIZE"));
   };
 
   public constructor(

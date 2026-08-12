@@ -1,5 +1,6 @@
 import { DataStore } from "fra.ktu.red-component";
 import { type ICommand } from "../icommand";
+import { getViewportFittedSize } from "../../helpers/viewport_fit";
 
 export class UpdateEditorSceneSizeForAspectRatioCommand implements ICommand {
   historyLabel = "UpdateEditorSceneSizeForAspectRatioCommand";
@@ -15,19 +16,7 @@ export class UpdateEditorSceneSizeForAspectRatioCommand implements ICommand {
       return;
     }
 
-    const viewportWidth = Math.max(1, window.innerWidth);
-    const viewportHeight = Math.max(1, window.innerHeight);
-
-    let width = viewportWidth;
-    let height = Math.round(width / this.aspectRatio);
-
-    if (height > viewportHeight) {
-      height = viewportHeight;
-      width = Math.round(height * this.aspectRatio);
-    }
-
-    width = Math.max(1, width);
-    height = Math.max(1, height);
+    const { width, height } = getViewportFittedSize(this.aspectRatio);
 
     DataStore.getInstance().setStore(
       "fomeprint.paperAspectRatio",
