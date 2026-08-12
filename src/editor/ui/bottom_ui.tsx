@@ -13,7 +13,7 @@ class BottomUI extends KTUComponent {
     return (
       <div class="bottom-ui">
         <Stage1Component binding="fomeprint.stage" />
-        <Stage2Component binding="fomeprint.stage" />
+        <Stage2Component binding="fomeprint.stage,fomeprint.store.selectedCategory,fomeprint.store.uploadedAssets" />
         <Stage3Component binding="fomeprint.stage" />
       </div>
     );

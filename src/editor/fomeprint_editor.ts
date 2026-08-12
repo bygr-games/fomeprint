@@ -13,6 +13,7 @@ import { MouseManager } from "./managers/mouse_manager";
 import { TouchManager } from "./managers/touch_manager";
 import { ExtraSettingsComponent } from "./ui/extra_settings";
 import { FireErrorMessageCommand } from "./commands/fomeprint/fire_error_message_command";
+import { setupStore } from "./managers/store_manager";
 
 export class FomeprintEditor {
   canvasContainer: HTMLElement;
@@ -82,6 +83,8 @@ export class FomeprintEditor {
     this.bottomUIContainer = bottomUIContainer;
     this.extraSettingsContainer = extraSettingsContainer;
     this.mouseManager = new MouseManager("editorScene");
+    DataStore.getInstance().setStore("fomeprint.selectedPaper", "50x50");
+    DataStore.getInstance().setStore("fomeprint.paperAspectRatio", 1);
     executeCommand(new NewStateCommand());
 
     executeCommand(
@@ -146,5 +149,6 @@ export class FomeprintEditor {
         DataStore.getInstance().touchIds("editorScene");
       },
     );
+    setupStore();
   }
 }

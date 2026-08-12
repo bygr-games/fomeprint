@@ -1,0 +1,136 @@
+type PaperSizeOption = {
+  value: string;
+  label: string;
+  widthMm: number;
+  heightMm: number;
+  aspectRatio: number;
+  shape?: "round" | "rectangle";
+  isDefault?: boolean;
+};
+
+export const PAPER_SIZES: PaperSizeOption[] = [
+  {
+    value: "12x40",
+    label: "12x40mm",
+    widthMm: 12,
+    heightMm: 40,
+    aspectRatio: 0.3,
+  },
+  {
+    value: "15x30",
+    label: "15x30mm",
+    widthMm: 15,
+    heightMm: 30,
+    aspectRatio: 0.5,
+  },
+  {
+    value: "20x30",
+    label: "20x30mm",
+    widthMm: 20,
+    heightMm: 30,
+    aspectRatio: 0.666667,
+  },
+  {
+    value: "25x50",
+    label: "25x50mm",
+    widthMm: 25,
+    heightMm: 50,
+    aspectRatio: 0.5,
+  },
+  {
+    value: "30x20",
+    label: "30x20mm",
+    widthMm: 30,
+    heightMm: 20,
+    aspectRatio: 1.5,
+  },
+  {
+    value: "30x40",
+    label: "30x40mm",
+    widthMm: 30,
+    heightMm: 40,
+    aspectRatio: 0.75,
+  },
+  {
+    value: "40x30",
+    label: "40x30mm",
+    widthMm: 40,
+    heightMm: 30,
+    aspectRatio: 1.333333,
+  },
+  {
+    value: "40x60",
+    label: "40x60mm",
+    widthMm: 40,
+    heightMm: 60,
+    aspectRatio: 0.666667,
+  },
+  {
+    value: "50x25",
+    label: "50x25mm",
+    widthMm: 50,
+    heightMm: 25,
+    aspectRatio: 2,
+  },
+  {
+    value: "50x30",
+    label: "50x30mm",
+    widthMm: 50,
+    heightMm: 30,
+    aspectRatio: 1.666667,
+  },
+  {
+    value: "50x50",
+    label: "50x50mm",
+    widthMm: 50,
+    heightMm: 50,
+    aspectRatio: 1,
+    isDefault: true,
+  },
+  {
+    value: "50x80",
+    label: "50x80mm",
+    widthMm: 50,
+    heightMm: 80,
+    aspectRatio: 0.625,
+  },
+  {
+    value: "60x40",
+    label: "60x40mm",
+    widthMm: 60,
+    heightMm: 40,
+    aspectRatio: 1.5,
+  },
+  {
+    value: "20mm Round",
+    label: "20mm Round",
+    widthMm: 20,
+    heightMm: 20,
+    aspectRatio: 1,
+    shape: "round",
+  },
+  {
+    value: "30mm Round",
+    label: "30mm Round",
+    widthMm: 30,
+    heightMm: 30,
+    aspectRatio: 1,
+    shape: "round",
+  },
+  {
+    value: "40mm Round",
+    label: "40mm Round",
+    widthMm: 40,
+    heightMm: 40,
+    aspectRatio: 1,
+    shape: "round",
+  },
+  {
+    value: "50mm Round",
+    label: "50mm Round",
+    widthMm: 50,
+    heightMm: 50,
+    aspectRatio: 1,
+    shape: "round",
+  },
+];

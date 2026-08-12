@@ -18,6 +18,7 @@ import {
 import { SwapCameraCommand } from "../../commands/fomeprint/swap_camera_command";
 import { FireErrorMessageCommand } from "../../commands/fomeprint/fire_error_message_command";
 import { NewStateCommand } from "../../commands/new_state_command";
+import { SetFomeprintStageCommand } from "../../commands/fomeprint/set_fomeprint_stage_command";
 
 class Stage1 extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -56,13 +57,6 @@ class Stage1 extends KTUComponent {
         <button
           type="button"
           class="ui-square-action-button"
-          onclick={() => this.snapshotCameraLayer()}
-        >
-          {IconSnapshot()}
-        </button>
-        <button
-          type="button"
-          class="ui-square-action-button"
           onclick={() => this.swapCamera()}
         >
           {IconSwap()}
@@ -73,6 +67,13 @@ class Stage1 extends KTUComponent {
           onclick={() => this.toggleFlip()}
         >
           {IconMirror()}
+        </button>
+        <button
+          type="button"
+          class="ui-square-action-button"
+          onclick={() => this.snapshotCameraLayer()}
+        >
+          {IconSnapshot()}
         </button>
         <input
           id="stage1-load-input"
@@ -110,7 +111,6 @@ class Stage1 extends KTUComponent {
 
     input.value = "";
     input.click();
-    this.reRender();
   }
 
   private onLoadFileChange(event: Event) {
@@ -155,6 +155,7 @@ class Stage1 extends KTUComponent {
       }
 
       executeCommand(new NewStateCommand(sceneState));
+      executeCommand(new SetFomeprintStageCommand(2));
     };
 
     reader.onerror = () => {

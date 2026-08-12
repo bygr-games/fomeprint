@@ -5,6 +5,9 @@ import { AdjustmentBrightnessControlComponent } from "./controls/adjustment_brig
 import { AdjustmentContrastControlComponent } from "./controls/adjustment_contrast_control";
 import { BayerPixelSizeControlComponent } from "./controls/bayer_pixel_size_control";
 import { getShaderParentLayerId } from "../helpers/active_helper";
+import { PAPER_SIZES } from "../helpers/paper_helper";
+import { executeCommand } from "../../ktu/helpers/commands_manager";
+import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
 
 class ExtraSettings extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -16,6 +19,32 @@ class ExtraSettings extends KTUComponent {
     return (
       <div class="extra-settings">
         <nav class="extra-settings-menu" aria-label="Extra settings menu">
+          <label for="paper-size-select" class="stage3-paper-size-label">
+            Paper Size
+          </label>
+          <select
+            id="paper-size-select"
+            class="stage3-paper-size-select"
+            onchange={(event: Event) => {
+              const target = event.target as HTMLSelectElement | null;
+              if (!target) {
+                return;
+              }
+              this.handlePaperSizeChange(target.value);
+            }}
+          >
+            {PAPER_SIZES.map((paperSize) => (
+              <option
+                value={paperSize.value}
+                selected={
+                  paperSize.value ===
+                  DataStore.getInstance().getStore("fomeprint.selectedPaper")
+                }
+              >
+                {paperSize.label}
+              </option>
+            ))}
+          </select>
           <AdjustmentBrightnessControlComponent
             binding={
               "editorScene.layers.!" +
@@ -54,6 +83,18 @@ class ExtraSettings extends KTUComponent {
             ))}
         </div>
       </div>
+    );
+  }
+  private handlePaperSizeChange(value: string) {
+    const selected = PAPER_SIZES.find((paperSize) => paperSize.value === value);
+    if (!selected) {
+      return;
+    }
+
+    DataStore.getInstance().setStore("fomeprint.paperSize", selected.value);
+
+    executeCommand(
+      new UpdateEditorSceneSizeForAspectRatioCommand(selected.aspectRatio),
     );
   }
 }

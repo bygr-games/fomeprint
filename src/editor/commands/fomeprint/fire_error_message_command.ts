@@ -10,7 +10,7 @@ export class FireErrorMessageCommand implements ICommand {
   }
 
   execute(): void {
-    console.error(this.message);
+    //console.error(this.message);
     const errorMessages: string[] =
       DataStore.getInstance().getStore("fomeprint.errorMessages") || [];
     errorMessages.push(this.message);

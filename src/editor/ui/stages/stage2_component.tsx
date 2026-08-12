@@ -17,36 +17,24 @@ import {
   IconReset,
   IconTrash,
 } from "../../helpers/icons";
-
-type StickerCategory = {
-  id: string;
-  label: string;
-  assets: string[];
-};
-
-type StickersManifest = {
-  categories: StickerCategory[];
-};
+import {
+  addUploadedSticker,
+  getSelectedCategory,
+  removeUploadedSticker,
+  saveUploadedStickersToStorage,
+  uploadedCategoryId,
+  uploadedCategoryLabel,
+  type StickerCategory,
+} from "../../managers/store_manager";
+import { FireErrorMessageCommand } from "../../commands/fomeprint/fire_error_message_command";
 
 class Stage2 extends KTUComponent {
-  private static readonly uploadedCategoryId = "uploaded";
-  private static readonly uploadedCategoryLabel = "Uploaded";
-  private static readonly uploadedStickersStorageKey =
-    "fomeprint.uploadedStickers";
-
-  private manifest: StickersManifest | null = null;
-  private uploadedAssets: string[] = [];
-  private selectedCategoryId = "";
-  private loadingState: "loading" | "ready" | "error" = "loading";
-  private uploadStatusMessage = "";
   private pendingRemoveAssetPath: string | null = null;
   private isStickersMenuOpen = false;
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: `${baseBinding},activeThingId,editorScene.layers` });
-    this.loadUploadedStickersFromStorage();
-    void this.loadManifest();
   }
 
   defaultBinding(): Record<string, any> {
@@ -69,9 +57,9 @@ class Stage2 extends KTUComponent {
     }
 
     const categories = this.getCategories();
-    const selectedCategory = this.getSelectedCategory();
+    const selectedCategory = getSelectedCategory();
     const isUploadedCategorySelected =
-      selectedCategory?.id === Stage2.uploadedCategoryId;
+      selectedCategory?.id === uploadedCategoryId;
     const activeStickerLayer = this.getActiveStickerLayer();
     const canDeleteActiveSticker = activeStickerLayer !== null;
 
@@ -110,84 +98,67 @@ class Stage2 extends KTUComponent {
         </div>
         <div class={`stickers-menu ${this.isStickersMenuOpen ? "" : "hidden"}`}>
           <div class="stickers-menu-header">Stickers</div>
-          {this.loadingState === "loading" && (
-            <div class="stickers-menu-status">Loading stickers...</div>
-          )}
-          {this.loadingState === "error" && (
-            <div class="stickers-menu-status">
-              Could not load sticker categories.
-            </div>
-          )}
-          {this.loadingState === "ready" && categories.length > 0 && (
-            <>
-              <div class="stickers-categories">
-                {categories.map((category) => {
-                  const isSelected = category.id === selectedCategory?.id;
-                  return (
+          <div class="stickers-categories">
+            {categories.map((category) => {
+              const isSelected = category.id === selectedCategory?.id;
+              return (
+                <button
+                  type="button"
+                  class={`stickers-category-button ${isSelected ? "is-selected" : ""}`}
+                  onclick={() => this.selectCategory(category.id)}
+                >
+                  {category.label}
+                </button>
+              );
+            })}
+          </div>
+          <div class="stickers-grid">
+            {(selectedCategory?.assets ?? []).map((assetPath, index) => {
+              const ariaLabel = `${selectedCategory?.label ?? "Sticker"} ${index + 1}`;
+              return (
+                <div class="sticker-thumb-wrap">
+                  <button
+                    type="button"
+                    class="sticker-thumb"
+                    title={assetPath}
+                    aria-label={ariaLabel}
+                    onclick={() => this.createStickerLayer(assetPath)}
+                  >
+                    <img src={assetPath} alt="" />
+                  </button>
+                  {isUploadedCategorySelected && (
                     <button
                       type="button"
-                      class={`stickers-category-button ${isSelected ? "is-selected" : ""}`}
-                      onclick={() => this.selectCategory(category.id)}
+                      class="sticker-thumb-remove"
+                      aria-label={`Remove ${ariaLabel}`}
+                      title="Remove uploaded sticker"
+                      onclick={(event) =>
+                        this.promptRemoveUploadedSticker(assetPath, event)
+                      }
                     >
-                      {category.label}
+                      x
                     </button>
-                  );
-                })}
-              </div>
-              <div class="stickers-grid">
-                {(selectedCategory?.assets ?? []).map((assetPath, index) => {
-                  const ariaLabel = `${selectedCategory?.label ?? "Sticker"} ${index + 1}`;
-                  return (
-                    <div class="sticker-thumb-wrap">
-                      <button
-                        type="button"
-                        class="sticker-thumb"
-                        title={assetPath}
-                        aria-label={ariaLabel}
-                        onclick={() => this.createStickerLayer(assetPath)}
-                      >
-                        <img src={assetPath} alt="" />
-                      </button>
-                      {isUploadedCategorySelected && (
-                        <button
-                          type="button"
-                          class="sticker-thumb-remove"
-                          aria-label={`Remove ${ariaLabel}`}
-                          title="Remove uploaded sticker"
-                          onclick={(event) =>
-                            this.promptRemoveUploadedSticker(assetPath, event)
-                          }
-                        >
-                          x
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {selectedCategory && selectedCategory.assets.length === 0 && (
-                <div class="stickers-menu-status">
-                  No assets in {selectedCategory.label}.
+                  )}
                 </div>
-              )}
-              <div class="stickers-upload-row">
-                <label class="stickers-upload-label" for="sticker-upload-input">
-                  Upload sticker image
-                </label>
-                <input
-                  id="sticker-upload-input"
-                  type="file"
-                  accept="image/*"
-                  onchange={(event) => this.onStickerUploadChange(event)}
-                />
-              </div>
-              {this.uploadStatusMessage && (
-                <div class="stickers-menu-status">
-                  {this.uploadStatusMessage}
-                </div>
-              )}
-            </>
+              );
+            })}
+          </div>
+          {selectedCategory && selectedCategory.assets.length === 0 && (
+            <div class="stickers-menu-status">
+              No assets in {selectedCategory.label}.
+            </div>
           )}
+          <div class="stickers-upload-row">
+            <label class="stickers-upload-label" for="sticker-upload-input">
+              Upload sticker image
+            </label>
+            <input
+              id="sticker-upload-input"
+              type="file"
+              accept="image/*"
+              onchange={(event) => this.onStickerUploadChange(event)}
+            />
+          </div>
         </div>
         {this.pendingRemoveAssetPath && (
           <div class="stage2-confirm-overlay" role="dialog" aria-modal="true">
@@ -204,7 +175,10 @@ class Stage2 extends KTUComponent {
                 <button
                   type="button"
                   class="stage2-confirm-button stage2-confirm-remove"
-                  onclick={() => this.confirmRemoveUploadedSticker()}
+                  onclick={() => {
+                    removeUploadedSticker(this.pendingRemoveAssetPath!);
+                    this.pendingRemoveAssetPath = null;
+                  }}
                 >
                   Remove
                 </button>
@@ -221,92 +195,30 @@ class Stage2 extends KTUComponent {
     this.reRender();
   }
 
-  private async loadManifest() {
-    try {
-      const response = await fetch(
-        this.resolvePublicAssetPath("assets/stickers_manifest.json"),
-        {
-          cache: "no-store",
-        },
-      );
-      if (!response.ok) {
-        throw new Error("Failed to load stickers manifest");
-      }
-
-      const data = (await response.json()) as Partial<StickersManifest>;
-      const categories = Array.isArray(data.categories)
-        ? data.categories
-            .filter((category): category is StickerCategory => {
-              return (
-                typeof category?.id === "string" &&
-                typeof category?.label === "string" &&
-                Array.isArray(category?.assets)
-              );
-            })
-            .map((category) => ({
-              id: category.id,
-              label: category.label,
-              assets: category.assets
-                .filter((asset) => typeof asset === "string")
-                .map((asset) => this.resolvePublicAssetPath(asset)),
-            }))
-        : [];
-
-      this.manifest = { categories };
-      const allCategories = this.getCategories();
-      if (allCategories.length > 0) {
-        const hasSelected = allCategories.some(
-          (category) => category.id === this.selectedCategoryId,
-        );
-        if (!hasSelected) {
-          this.selectedCategoryId = allCategories[0].id;
-        }
-      }
-
-      this.loadingState = "ready";
-    } catch {
-      this.loadingState = "error";
-      this.manifest = null;
-    }
-
-    this.reRender();
-  }
-
-  private resolvePublicAssetPath(path: string): string {
-    if (/^(?:[a-z]+:)?\/\//i.test(path)) {
-      return path;
-    }
-
-    return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
-  }
-
-  private getSelectedCategory(): StickerCategory | null {
-    const categories = this.getCategories();
-    if (categories.length === 0) {
-      return null;
-    }
-
-    return (
-      categories.find((category) => category.id === this.selectedCategoryId) ??
-      categories[0]
-    );
-  }
-
   private selectCategory(categoryId: string) {
-    if (categoryId === this.selectedCategoryId) {
+    if (
+      categoryId ===
+      DataStore.getInstance().getStore("fomeprint.store.selectedCategory")
+    ) {
       return;
     }
 
-    this.selectedCategoryId = categoryId;
-    this.reRender();
+    DataStore.getInstance().setStore(
+      "fomeprint.store.selectedCategory",
+      categoryId,
+    );
   }
 
   private getCategories(): StickerCategory[] {
-    const categories = this.manifest?.categories ?? [];
+    const categories = DataStore.getInstance().getStore(
+      "fomeprint.store.stickers.categories",
+    );
     const uploadedCategory: StickerCategory = {
-      id: Stage2.uploadedCategoryId,
-      label: Stage2.uploadedCategoryLabel,
-      assets: this.uploadedAssets,
+      id: uploadedCategoryId,
+      label: uploadedCategoryLabel,
+      assets: DataStore.getInstance().getStore(
+        "fomeprint.store.uploadedAssets",
+      ),
     };
 
     return [...categories, uploadedCategory];
@@ -332,8 +244,9 @@ class Stage2 extends KTUComponent {
     }
 
     if (!file.type.startsWith("image/")) {
-      this.uploadStatusMessage = "Please choose an image file.";
-      this.reRender();
+      executeCommand(
+        new FireErrorMessageCommand("Selected file is not an image."),
+      );
       if (input) {
         input.value = "";
       }
@@ -344,21 +257,24 @@ class Stage2 extends KTUComponent {
     reader.onload = () => {
       const result = reader.result;
       if (typeof result !== "string" || !result) {
-        this.uploadStatusMessage = "Could not read the selected image.";
-        this.reRender();
+        executeCommand(
+          new FireErrorMessageCommand("Could not read the selected image."),
+        );
         return;
       }
 
-      this.addUploadedSticker(result);
-      this.selectedCategoryId = Stage2.uploadedCategoryId;
-      this.uploadStatusMessage = `Uploaded ${file.name}`;
+      addUploadedSticker(result);
+      DataStore.getInstance().setStore(
+        "fomeprint.store.selectedCategory",
+        uploadedCategoryId,
+      );
       this.createStickerLayer(result);
-      this.reRender();
     };
 
     reader.onerror = () => {
-      this.uploadStatusMessage = "Could not read the selected image.";
-      this.reRender();
+      executeCommand(
+        new FireErrorMessageCommand("Could not read the selected image."),
+      );
     };
 
     reader.readAsDataURL(file);
@@ -366,55 +282,6 @@ class Stage2 extends KTUComponent {
     if (input) {
       input.value = "";
     }
-  }
-
-  private loadUploadedStickersFromStorage() {
-    try {
-      const raw = window.localStorage.getItem(
-        Stage2.uploadedStickersStorageKey,
-      );
-      if (!raw) {
-        this.uploadedAssets = [];
-        return;
-      }
-
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) {
-        this.uploadedAssets = [];
-        return;
-      }
-
-      this.uploadedAssets = parsed.filter(
-        (asset): asset is string =>
-          typeof asset === "string" && asset.startsWith("data:image/"),
-      );
-
-      if (!this.selectedCategoryId && this.uploadedAssets.length > 0) {
-        this.selectedCategoryId = Stage2.uploadedCategoryId;
-      }
-    } catch {
-      this.uploadedAssets = [];
-    }
-  }
-
-  private saveUploadedStickersToStorage() {
-    try {
-      window.localStorage.setItem(
-        Stage2.uploadedStickersStorageKey,
-        JSON.stringify(this.uploadedAssets),
-      );
-    } catch {
-      // Ignore storage quota and serialization failures.
-    }
-  }
-
-  private addUploadedSticker(assetPath: string) {
-    const deduped = [
-      assetPath,
-      ...this.uploadedAssets.filter((a) => a !== assetPath),
-    ];
-    this.uploadedAssets = deduped;
-    this.saveUploadedStickersToStorage();
   }
 
   private promptRemoveUploadedSticker(assetPath: string, event: Event) {
@@ -431,28 +298,6 @@ class Stage2 extends KTUComponent {
     }
 
     this.pendingRemoveAssetPath = null;
-    this.reRender();
-  }
-
-  private confirmRemoveUploadedSticker() {
-    const assetPath = this.pendingRemoveAssetPath;
-    if (!assetPath) {
-      return;
-    }
-
-    this.pendingRemoveAssetPath = null;
-
-    const nextAssets = this.uploadedAssets.filter(
-      (asset) => asset !== assetPath,
-    );
-    if (nextAssets.length === this.uploadedAssets.length) {
-      this.reRender();
-      return;
-    }
-
-    this.uploadedAssets = nextAssets;
-    this.saveUploadedStickersToStorage();
-    this.uploadStatusMessage = "Removed uploaded sticker.";
     this.reRender();
   }
 
