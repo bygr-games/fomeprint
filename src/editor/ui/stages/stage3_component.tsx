@@ -8,7 +8,6 @@ import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { NewStateCommand } from "../../commands/new_state_command";
 import {
   IconBack,
-  IconBluetooth,
   IconDownload,
   IconPrint,
   IconReset,
@@ -57,7 +56,6 @@ class Stage3 extends KTUComponent {
     const secureContext = window.isSecureContext;
     const canConnect = this.printerStatus.connection !== "connecting";
     const isConnected = this.printerStatus.connection === "connected";
-    const isPrinting = this.printerStatus.print === "printing";
 
     const statusKind = this.getStatusKind();
 
@@ -102,19 +100,7 @@ class Stage3 extends KTUComponent {
                       !supportsBluetooth || !secureContext || !canConnect
                     }
                   >
-                    {IconBluetooth()}
-                  </button>
-                )}
-                {isConnected && (
-                  <button
-                    type="button"
-                    class="ui-square-action-button"
-                    onclick={() => void this.handlePrintButton()}
-                    disabled={isPrinting}
-                  >
-                    {isPrinting
-                      ? `Printing ${Math.max(0, this.printerStatus.progress)}%`
-                      : IconPrint()}
+                    {IconPrint()}
                   </button>
                 )}
               </div>
@@ -143,9 +129,9 @@ class Stage3 extends KTUComponent {
     const name = this.printerStatus.deviceName;
     if (this.printerStatus.connection === "connected" && name) {
       if (this.printerStatus.print === "printing") {
-        return this.printerStatus.message;
+        return `Printing ${Math.max(0, this.printerStatus.progress)}%`;
       }
-      return `Connected to ${name}`;
+      return "Connected";
     }
 
     if (this.printerStatus.message) {
@@ -170,11 +156,10 @@ class Stage3 extends KTUComponent {
 
   private async handleConnectButton(): Promise<void> {
     try {
-      if (this.printerStatus.connection === "connected") {
-        await this.printer.disconnect();
-      } else {
+      if (this.printerStatus.connection !== "connected") {
         await this.printer.connect();
       }
+      this.handlePrintButton();
     } catch (error) {
       const message = "Connection Error";
       executeCommand(
