@@ -122,6 +122,7 @@ export class NewStateCommand implements ICommand {
     );
     syncLayerBoundingBoxesByActiveThingId(null);
     DataStore.getInstance().setStore("fomeprint.stage", 1);
+    DataStore.getInstance().touch("fomeprint.paperAspectRatio");
   }
   revert(): void {}
 }
