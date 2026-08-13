@@ -90,7 +90,8 @@ export class FomeprintEditor {
       return;
     }
 
-    if (stage === this.currentStage()) {
+    const previousStage = this.currentStage();
+    if (stage === previousStage) {
       return;
     }
 
@@ -102,7 +103,13 @@ export class FomeprintEditor {
     }
 
     if (stage === 1) {
-      window.dispatchEvent(new CustomEvent("fomeprint:request-reset-confirm"));
+      window.dispatchEvent(
+        new CustomEvent("fomeprint:request-reset-confirm", {
+          detail: {
+            returnStage: previousStage,
+          },
+        }),
+      );
     }
   };
 

@@ -16,7 +16,18 @@ import {
 
 class TopUI extends KTUComponent {
   private isResetConfirmOpen = false;
-  private readonly onRequestResetConfirm = () => this.promptResetState();
+  private resetCancelStage: 1 | 2 | 3 | null = null;
+  private readonly onRequestResetConfirm = (event: Event) => {
+    const customEvent = event as CustomEvent<{ returnStage?: unknown }>;
+    const requestedStage = Number(customEvent.detail?.returnStage);
+    if (requestedStage === 1 || requestedStage === 2 || requestedStage === 3) {
+      this.resetCancelStage = requestedStage;
+    } else {
+      this.resetCancelStage = null;
+    }
+
+    this.promptResetState();
+  };
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
@@ -202,6 +213,9 @@ class TopUI extends KTUComponent {
   }
 
   private promptResetState() {
+    if (!this.resetCancelStage) {
+      this.resetCancelStage = null;
+    }
     this.isResetConfirmOpen = true;
     this.reRender();
   }
@@ -211,7 +225,14 @@ class TopUI extends KTUComponent {
       return;
     }
 
+    const returnStage = this.resetCancelStage;
     this.isResetConfirmOpen = false;
+    this.resetCancelStage = null;
+
+    if (returnStage === 1 || returnStage === 2 || returnStage === 3) {
+      executeCommand(new SetFomeprintStageCommand(returnStage));
+    }
+
     this.reRender();
   }
 
@@ -221,6 +242,7 @@ class TopUI extends KTUComponent {
     }
 
     this.isResetConfirmOpen = false;
+    this.resetCancelStage = null;
 
     executeCommand(new NewStateCommand());
     this.fitCanvasToCurrentPaperAspectRatio();
