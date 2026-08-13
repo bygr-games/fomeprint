@@ -17,6 +17,20 @@ import {
 import { refreshAvailableCameras } from "../managers/camera_manager";
 import { getViewportFittedSize } from "../helpers/viewport_fit";
 
+const ADJUSTMENT_BRIGHTNESS_STORAGE_KEY = "fomeprint.adjustment.brightness";
+const ADJUSTMENT_CONTRAST_STORAGE_KEY = "fomeprint.adjustment.contrast";
+const BAYER_PIXEL_SIZE_STORAGE_KEY = "fomeprint.bayer.pixelSize";
+
+function readStoredNumber(key: string): number | null {
+  const value = window.localStorage.getItem(key);
+  if (value === null) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export class NewStateCommand implements ICommand {
   historyLabel = "NewStateCommand";
   undoable?: boolean | undefined = false;
@@ -45,8 +59,10 @@ export class NewStateCommand implements ICommand {
       console.error("Error loading autosaved state:", e);
     }
     const adjustmentShader = AdjustmentShader.getDefaultState("editorScene");
-    adjustmentShader.contrast = 3;
-    adjustmentShader.brightness = 3;
+    adjustmentShader.contrast =
+      readStoredNumber(ADJUSTMENT_CONTRAST_STORAGE_KEY) ?? 3;
+    adjustmentShader.brightness =
+      readStoredNumber(ADJUSTMENT_BRIGHTNESS_STORAGE_KEY) ?? 3;
 
     const cameraLayer = CameraLayer.getDefaultState("editorScene");
     cameraLayer.hFlip = true;
@@ -61,7 +77,8 @@ export class NewStateCommand implements ICommand {
     const bnwShader = BnwShader.getDefaultState("editorScene");
 
     const ditheringShader = BayerDitheringShader.getDefaultState("editorScene");
-    ditheringShader.pixelSize = 3;
+    ditheringShader.pixelSize =
+      readStoredNumber(BAYER_PIXEL_SIZE_STORAGE_KEY) ?? 3;
     ditheringShader.levels = 2;
     ditheringShader.matrixSize = 32;
 
