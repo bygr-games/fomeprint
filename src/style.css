@@ -206,6 +206,10 @@ textarea {
   text-align: left;
 }
 
+.extra-settings-output-log-title {
+  margin-top: 1rem;
+}
+
 .extra-settings .stage-control-row {
   display: flex;
   align-items: center;
@@ -282,6 +286,39 @@ textarea {
   font-weight: 700;
   font-size: 14px;
   color: var(--store-text);
+}
+
+.stickers-menu-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stickers-menu-title-row .stickers-menu-header {
+  margin-right: auto;
+}
+
+.stickers-menu-close-button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--store-border-strong);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--third-color-dark) 72%, transparent);
+  color: var(--store-text);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.stickers-menu-close-button > svg {
+  width: 70%;
+  height: 70%;
+}
+
+.stickers-menu-close-button:hover {
+  border-color: var(--third-color-light);
 }
 
 .stickers-menu-status {

@@ -55,8 +55,6 @@ export class FomeprintEditor {
       | { resize?: () => void }
       | undefined;
     application?.resize?.();
-
-    executeCommand(new FireErrorMessageCommand("FINISHED RESIZE"));
   };
 
   public constructor(

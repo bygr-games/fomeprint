@@ -82,7 +82,17 @@ class Stage2 extends KTUComponent {
           </button>
         </div>
         <div class={`stickers-menu ${this.isStickersMenuOpen ? "" : "hidden"}`}>
-          <div class="stickers-menu-header">Stickers</div>
+          <div class="stickers-menu-title-row">
+            <div class="stickers-menu-header">Stickers</div>
+            <button
+              type="button"
+              class="stickers-menu-close-button"
+              aria-label="Close sticker store"
+              onclick={() => this.toggleStickersMenu()}
+            >
+              {IconClose()}
+            </button>
+          </div>
           <div class="stickers-categories">
             {categories.map((category) => {
               const isSelected = category.id === selectedCategory?.id;

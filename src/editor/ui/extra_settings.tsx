@@ -108,7 +108,9 @@ class ExtraSettings extends KTUComponent {
               />
             </div>
           </nav>
-          <h3 class="extra-settings-title">Output Log</h3>
+          <h3 class="extra-settings-title extra-settings-output-log-title">
+            Output Log
+          </h3>
           <div class="extra-settings-error-messages">
             {DataStore.getInstance()
               .getStore("fomeprint.errorMessages")
