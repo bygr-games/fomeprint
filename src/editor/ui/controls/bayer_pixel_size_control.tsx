@@ -17,7 +17,7 @@ class BayerPixelSizeControl extends KTUComponent {
     const pixelSize = this.getBayerPixelSize();
     return (
       <div class="stage-control-row">
-        <span class="stage-control-label">Bayer Pixel Size</span>
+        <span class="stage-control-label">Pixel Size</span>
         <button type="button" onclick={() => this.adjustBayerPixelSize(-1)}>
           -
         </button>

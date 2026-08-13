@@ -3,12 +3,12 @@ import { DataStore, KTUComponent } from "fra.ktu.red-component";
 import { AdjustmentBrightnessControlComponent } from "./controls/adjustment_brightness_control";
 import { AdjustmentContrastControlComponent } from "./controls/adjustment_contrast_control";
 import { BayerPixelSizeControlComponent } from "./controls/bayer_pixel_size_control";
+import { PosterizeThresholdControlComponent } from "./controls/posterize_threshold_control";
 import { getShaderParentLayerId } from "../helpers/active_helper";
 import { PAPER_SIZES } from "../helpers/paper_helper";
 import { executeCommand } from "../../ktu/helpers/commands_manager";
 import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
-import { ToggleBnwCommand } from "../commands/shaders/toggle_bnw_command";
-import { ToggleBayerDitheringCommand } from "../commands/shaders/toggle_bayer_dithering_command";
+import { SetDitherThresholdModeCommand } from "../commands/shaders/set_dither_threshold_mode_command";
 
 class ExtraSettings extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -55,58 +55,66 @@ class ExtraSettings extends KTUComponent {
                 ))}
               </select>
             </div>
-            <AdjustmentBrightnessControlComponent
-              binding={
-                "editorScene.layers.!" +
-                getShaderParentLayerId(
-                  this.bindingData["fomeprint.adjustmentShaderId"],
-                ) +
-                ".shaders.!" +
-                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
-              }
-            />
-            <AdjustmentContrastControlComponent
-              binding={
-                "editorScene.layers.!" +
-                getShaderParentLayerId(
-                  this.bindingData["fomeprint.adjustmentShaderId"],
-                ) +
-                ".shaders.!" +
-                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
-              }
-            />
-            <BayerPixelSizeControlComponent
-              binding={
-                "editorScene.shaders.!" +
-                DataStore.getInstance().getStore(
-                  "fomeprint.bayerDitheringShaderId",
-                )
-              }
-            />
             <div class="stage-control-row">
-              <label for="bnw-toggle" class="stage-control-label">
-                BnW Filter
+              <label for="dither-threshold-toggle" class="stage-control-label">
+                Dither/Threshold
               </label>
               <input
-                id="bnw-toggle"
+                id="dither-threshold-toggle"
                 class="extra-settings-toggle"
                 type="checkbox"
-                checked={this.isBnwEnabled()}
-                onchange={() => this.toggleBnw()}
+                checked={this.isThresholdMode()}
+                onchange={() => this.toggleDitherThresholdMode()}
               />
             </div>
-            <div class="stage-control-row">
-              <label for="bayer-toggle" class="stage-control-label">
-                Bayer Dithering
-              </label>
-              <input
-                id="bayer-toggle"
-                class="extra-settings-toggle"
-                type="checkbox"
-                checked={this.isBayerDitheringEnabled()}
-                onchange={() => this.toggleBayerDithering()}
+            {!this.isThresholdMode() && (
+              <AdjustmentBrightnessControlComponent
+                binding={
+                  "editorScene.layers.!" +
+                  getShaderParentLayerId(
+                    this.bindingData["fomeprint.adjustmentShaderId"],
+                  ) +
+                  ".shaders.!" +
+                  DataStore.getInstance().getStore(
+                    "fomeprint.adjustmentShaderId",
+                  )
+                }
               />
-            </div>
+            )}
+            {!this.isThresholdMode() && (
+              <AdjustmentContrastControlComponent
+                binding={
+                  "editorScene.layers.!" +
+                  getShaderParentLayerId(
+                    this.bindingData["fomeprint.adjustmentShaderId"],
+                  ) +
+                  ".shaders.!" +
+                  DataStore.getInstance().getStore(
+                    "fomeprint.adjustmentShaderId",
+                  )
+                }
+              />
+            )}
+            {!this.isThresholdMode() && (
+              <BayerPixelSizeControlComponent
+                binding={
+                  "editorScene.shaders.!" +
+                  DataStore.getInstance().getStore(
+                    "fomeprint.bayerDitheringShaderId",
+                  )
+                }
+              />
+            )}
+            {this.isThresholdMode() && (
+              <PosterizeThresholdControlComponent
+                binding={
+                  "editorScene.shaders.!" +
+                  DataStore.getInstance().getStore(
+                    "fomeprint.posterizeShaderId",
+                  )
+                }
+              />
+            )}
           </nav>
           <h3 class="extra-settings-title extra-settings-output-log-title">
             Output Log
@@ -134,28 +142,22 @@ class ExtraSettings extends KTUComponent {
       new UpdateEditorSceneSizeForAspectRatioCommand(selected.aspectRatio),
     );
   }
-  private toggleBnw() {
-    executeCommand(new ToggleBnwCommand("editorScene"));
+  private toggleDitherThresholdMode() {
+    executeCommand(
+      new SetDitherThresholdModeCommand(
+        this.isThresholdMode() ? "dither" : "threshold",
+        "editorScene",
+      ),
+    );
+    this.reRender();
   }
 
-  private toggleBayerDithering() {
-    executeCommand(new ToggleBayerDitheringCommand("editorScene"));
-  }
-
-  private isBnwEnabled(): boolean {
+  private isThresholdMode(): boolean {
     const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
       | Array<{ type?: string; visible?: boolean }>
       | undefined;
-    const shader = shaders?.find((item) => item.type === "bnw");
-    return shader?.visible !== false;
-  }
-
-  private isBayerDitheringEnabled(): boolean {
-    const shaders = DataStore.getInstance().getStore("editorScene.shaders") as
-      | Array<{ type?: string; visible?: boolean }>
-      | undefined;
-    const shader = shaders?.find((item) => item.type === "bayer_dithering");
-    return shader?.visible !== false;
+    const posterizeShader = shaders?.find((item) => item.type === "posterize");
+    return posterizeShader?.visible === true;
   }
 }
 

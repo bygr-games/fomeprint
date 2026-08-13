@@ -6,6 +6,7 @@ import {
   BnwShader,
   BayerDitheringShader,
   AdjustmentShader,
+  PosterizeShader,
 } from "fra.ktu.red-component";
 import { type ICommand } from "./icommand";
 import { clearCommands, clearRedo } from "../../ktu/helpers/commands_manager";
@@ -20,6 +21,8 @@ import { getViewportFittedSize } from "../helpers/viewport_fit";
 const ADJUSTMENT_BRIGHTNESS_STORAGE_KEY = "fomeprint.adjustment.brightness";
 const ADJUSTMENT_CONTRAST_STORAGE_KEY = "fomeprint.adjustment.contrast";
 const BAYER_PIXEL_SIZE_STORAGE_KEY = "fomeprint.bayer.pixelSize";
+const POSTERIZE_THRESHOLD_STORAGE_KEY = "fomeprint.posterize.threshold";
+const DITHER_THRESHOLD_MODE_STORAGE_KEY = "fomeprint.ditherThreshold.mode";
 
 function readStoredNumber(key: string): number | null {
   const value = window.localStorage.getItem(key);
@@ -29,6 +32,11 @@ function readStoredNumber(key: string): number | null {
 
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readStoredDitherThresholdMode(): "dither" | "threshold" {
+  const value = window.localStorage.getItem(DITHER_THRESHOLD_MODE_STORAGE_KEY);
+  return value === "threshold" ? "threshold" : "dither";
 }
 
 export class NewStateCommand implements ICommand {
@@ -82,6 +90,17 @@ export class NewStateCommand implements ICommand {
     ditheringShader.levels = 2;
     ditheringShader.matrixSize = 32;
 
+    const posterizeShader = PosterizeShader.getDefaultState("editorScene");
+    posterizeShader.levels = 2;
+    posterizeShader.threshold =
+      readStoredNumber(POSTERIZE_THRESHOLD_STORAGE_KEY) ?? 0.5;
+
+    const ditherThresholdMode = readStoredDitherThresholdMode();
+    const isDitherMode = ditherThresholdMode === "dither";
+    ditheringShader.visible = isDitherMode;
+    posterizeShader.visible = !isDitherMode;
+    adjustmentShader.visible = isDitherMode;
+
     const defaultPaperAspectRatio = 1;
     const fittedSize = getViewportFittedSize(defaultPaperAspectRatio);
 
@@ -94,7 +113,7 @@ export class NewStateCommand implements ICommand {
         BackgroundLayer.getDefaultState("editorScene", "white"),
         cameraLayer,
       ],
-      shaders: [bnwShader, ditheringShader],
+      shaders: [bnwShader, ditheringShader, posterizeShader],
       modulators: [],
       signals: [],
       assets: {},
@@ -115,6 +134,10 @@ export class NewStateCommand implements ICommand {
     DataStore.getInstance().setStore(
       "fomeprint.bayerDitheringShaderId",
       ditheringShader.id,
+    );
+    DataStore.getInstance().setStore(
+      "fomeprint.posterizeShaderId",
+      posterizeShader.id,
     );
     DataStore.getInstance().setStore("fomeprint.bnwShaderId", bnwShader.id);
     console.log("Camera layer ID:", cameraLayer.id);

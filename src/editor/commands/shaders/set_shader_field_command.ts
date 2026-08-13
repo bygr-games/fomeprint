@@ -9,6 +9,7 @@ const SHADER_LOCAL_STORAGE_KEYS: Record<string, string> = {
   brightness: "fomeprint.adjustment.brightness",
   contrast: "fomeprint.adjustment.contrast",
   pixelSize: "fomeprint.bayer.pixelSize",
+  threshold: "fomeprint.posterize.threshold",
 };
 
 export class SetShaderFieldCommand implements ICommand {
