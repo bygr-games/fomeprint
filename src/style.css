@@ -238,51 +238,103 @@ textarea {
 }
 
 .stickers-menu {
+  --store-border: color-mix(in srgb, var(--first-color-light) 62%, transparent);
+  --store-border-strong: var(--second-color-light);
+  --store-text: color-mix(
+    in srgb,
+    var(--second-color-light) 70%,
+    var(--first-color-light) 30%
+  );
+  --store-muted: color-mix(in srgb, var(--store-text) 68%, transparent);
+  --store-surface: color-mix(
+    in srgb,
+    var(--third-color-darker) 82%,
+    var(--first-color-darker) 18%
+  );
+  --store-tile: color-mix(
+    in srgb,
+    var(--third-color-dark) 70%,
+    var(--first-color-darker) 30%
+  );
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 12px;
-  width: 90vw;
-  position: absolute;
+  gap: 12px;
+  margin-bottom: 0;
+  width: min(92vw, 560px);
+  position: fixed;
   bottom: 0;
-  left: 5vw;
-  background-color: var(--third-color-darker);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  border: 1px solid var(--store-border-strong);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  background: var(--store-surface);
+  color: var(--store-text);
+  padding: 12px;
+  max-height: min(58svh, 470px);
+  overflow: hidden;
+  animation: sticker-store-pop 220ms ease-out;
 }
 
 .stickers-menu-header {
+  letter-spacing: 0.08em;
   font-weight: 700;
+  font-size: 14px;
+  color: var(--store-text);
 }
 
 .stickers-menu-status {
   font-size: 14px;
-  color: var(--text);
+  color: var(--store-muted);
+  padding: 0 2px;
 }
 
 .stickers-categories {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-height: min(13svh, 112px);
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .stickers-category-button {
-  border: 1px solid var(--border);
+  border: 1px solid var(--store-border);
   border-radius: 999px;
-  background: transparent;
-  color: var(--text-h);
-  padding: 6px 12px;
+  background: color-mix(in srgb, var(--third-color-dark) 72%, transparent);
+  color: var(--store-text);
+  padding: 6px 11px;
   cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease;
 }
 
 .stickers-category-button.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--accent);
+  border-color: var(--store-border-strong);
+  background: color-mix(
+    in srgb,
+    var(--second-color-light) 72%,
+    var(--second-color) 28%
+  );
+  color: var(--first-color-darker);
+}
+
+.stickers-category-button:hover {
+  border-color: var(--store-border-strong);
+  transform: translateY(-1px);
 }
 
 .stickers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 10px;
+  overflow: auto;
+  padding: 2px 2px 4px;
 }
 
 .sticker-thumb-wrap {
@@ -293,31 +345,47 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--store-border) 85%, transparent);
 }
 
 .stickers-upload-label {
-  font-size: 14px;
-  color: var(--text-h);
+  font-size: 12px;
+  color: var(--store-muted);
+  letter-spacing: 0.04em;
 }
 
 .stickers-upload-row input[type="file"] {
-  border: 1px solid var(--border);
+  border: 1px dashed var(--store-border-strong);
   border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-h);
-  padding: 8px 10px;
+  background: color-mix(
+    in srgb,
+    var(--third-color-dark) 76%,
+    var(--first-color-darker) 24%
+  );
+  color: var(--store-text);
+  padding: 7px 10px;
+  font-size: 12px;
 }
 
 .sticker-thumb {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--store-border) 80%, transparent);
+  border-radius: 12px;
+  background: var(--store-tile);
   padding: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
+  transition:
+    transform 130ms ease,
+    border-color 130ms ease;
+}
+
+.sticker-thumb:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--store-border-strong);
 }
 
 .sticker-thumb img {
@@ -328,11 +396,12 @@ textarea {
 
 .sticker-thumb-remove {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--border);
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid
+    color-mix(in srgb, var(--second-color-light) 50%, transparent);
   border-radius: 999px;
   padding: 0;
   display: inline-flex;
@@ -342,13 +411,13 @@ textarea {
   line-height: 1;
   font-weight: 700;
   cursor: pointer;
-  color: var(--text-h);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  color: var(--store-text);
+  background: color-mix(in srgb, var(--first-color-darker) 80%, transparent);
 }
 
 .sticker-thumb-remove:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--third-color-light);
+  color: var(--third-color);
 }
 
 .stage2-confirm-overlay {
@@ -358,17 +427,21 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, #000 24%, transparent);
+  background: color-mix(in srgb, var(--first-color-darker) 56%, transparent);
 }
 
 .stage2-confirm-modal {
   width: min(280px, calc(100vw - 32px));
-  border: 1px solid var(--border);
+  border: 1px solid
+    color-mix(in srgb, var(--second-color-light) 58%, transparent);
   border-radius: 10px;
-  background: var(--bg);
-  color: var(--text-h);
+  background: color-mix(
+    in srgb,
+    var(--third-color-dark) 78%,
+    var(--first-color-darker) 22%
+  );
+  color: var(--store-text);
   padding: 12px;
-  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -386,15 +459,49 @@ textarea {
 }
 
 .stage2-confirm-button {
-  border: 1px solid var(--border);
+  border: 1px solid
+    color-mix(in srgb, var(--second-color-light) 45%, transparent);
   border-radius: 8px;
   padding: 6px 10px;
-  background: transparent;
-  color: var(--text-h);
+  background: color-mix(in srgb, var(--third-color-dark) 70%, transparent);
+  color: var(--store-text);
   cursor: pointer;
 }
 
 .stage2-confirm-remove {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--third-color-light);
+  color: var(--third-color);
+}
+
+@keyframes sticker-store-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .stickers-menu {
+    width: calc(100vw - 20px);
+    left: 10px;
+    transform: none;
+    border-radius: 14px 14px 0 0;
+    bottom: 0;
+    max-height: min(62svh, 470px);
+  }
+
+  .stickers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+  }
+
+  .stickers-category-button {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 }
