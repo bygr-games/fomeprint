@@ -227,9 +227,62 @@ textarea {
   text-align: center;
 }
 
-.extra-settings-toggle {
-  width: 1.2rem;
-  height: 1.2rem;
+.extra-settings-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.extra-settings-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.extra-settings-toggle-track {
+  width: 2.9rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 2px solid #000;
+  background: color-mix(in srgb, var(--first-color) 60%, black 40%);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.extra-settings-toggle-knob {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #000;
+  transition: transform 180ms ease;
+}
+
+.extra-settings-toggle-input:checked + .extra-settings-toggle-track {
+  background: color-mix(in srgb, var(--second-color) 78%, black 22%);
+}
+
+.extra-settings-toggle-input:checked
+  + .extra-settings-toggle-track
+  .extra-settings-toggle-knob {
+  transform: translateX(1.25rem);
+}
+
+.extra-settings-toggle-input:focus-visible + .extra-settings-toggle-track {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .extra-settings-error-messages,

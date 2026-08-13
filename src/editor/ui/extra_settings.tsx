@@ -59,13 +59,22 @@ class ExtraSettings extends KTUComponent {
               <label for="dither-threshold-toggle" class="stage-control-label">
                 Dither/Threshold
               </label>
-              <input
-                id="dither-threshold-toggle"
-                class="extra-settings-toggle"
-                type="checkbox"
-                checked={this.isThresholdMode()}
-                onchange={() => this.toggleDitherThresholdMode()}
-              />
+              <label
+                for="dither-threshold-toggle"
+                class="extra-settings-switch"
+                aria-label="Toggle between dither and threshold modes"
+              >
+                <input
+                  id="dither-threshold-toggle"
+                  class="extra-settings-toggle-input"
+                  type="checkbox"
+                  checked={this.isThresholdMode()}
+                  onchange={() => this.toggleDitherThresholdMode()}
+                />
+                <span class="extra-settings-toggle-track" aria-hidden="true">
+                  <span class="extra-settings-toggle-knob"></span>
+                </span>
+              </label>
             </div>
             {!this.isThresholdMode() && (
               <AdjustmentBrightnessControlComponent
