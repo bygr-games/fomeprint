@@ -66,7 +66,7 @@ class TopUI extends KTUComponent {
           id="top-ui-load-input"
           class="top-ui-load-input hidden"
           type="file"
-          accept=".fomeprint.red,image/*"
+          accept="image/*"
           onchange={(event) => this.onLoadFileChange(event)}
         />
         {this.isResetConfirmOpen && (
