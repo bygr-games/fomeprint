@@ -74,7 +74,7 @@ export class NewStateCommand implements ICommand {
       height: fittedSize.height,
       duration: 1,
       layers: [
-        BackgroundLayer.getDefaultState("editorScene", "green"),
+        BackgroundLayer.getDefaultState("editorScene", "white"),
         cameraLayer,
       ],
       shaders: [bnwShader, ditheringShader],

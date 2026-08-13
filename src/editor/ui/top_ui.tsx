@@ -7,6 +7,12 @@ import { FireErrorMessageCommand } from "../commands/fomeprint/fire_error_messag
 import type { SceneState } from "fra.ktu.red-component";
 import { IconOpenFile, IconReset } from "../helpers/icons";
 import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
+import { CreateStickerVideoLayerCommand } from "../commands/layers/create_sticker_video_layer_command";
+import { RemoveCameraLayerCommand } from "../commands/layers/remove_camera_layer_command";
+import {
+  addUploadedSticker,
+  uploadedCategoryId,
+} from "../managers/store_manager";
 
 class TopUI extends KTUComponent {
   constructor(props: { binding?: string }) {
@@ -45,7 +51,7 @@ class TopUI extends KTUComponent {
           id="top-ui-load-input"
           class="top-ui-load-input hidden"
           type="file"
-          accept=".fomeprint.red,application/json"
+          accept=".fomeprint.red,image/*"
           onchange={(event) => this.onLoadFileChange(event)}
         />
       </div>
@@ -75,6 +81,46 @@ class TopUI extends KTUComponent {
     if (!file) {
       return;
     }
+
+    if (file.type.startsWith("image/")) {
+      this.loadImageAsSticker(file);
+      return;
+    }
+
+    this.loadSceneFile(file);
+  }
+
+  private loadImageAsSticker(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = reader.result;
+      if (typeof content !== "string" || !content) {
+        executeCommand(
+          new FireErrorMessageCommand("Could not read selected image file."),
+        );
+        return;
+      }
+
+      addUploadedSticker(content);
+      DataStore.getInstance().setStore(
+        "fomeprint.store.selectedCategory",
+        uploadedCategoryId,
+      );
+      executeCommand(new RemoveCameraLayerCommand());
+      executeCommand(new CreateStickerVideoLayerCommand(content));
+      executeCommand(new SetFomeprintStageCommand(2));
+    };
+
+    reader.onerror = () => {
+      executeCommand(
+        new FireErrorMessageCommand("Could not read selected image file."),
+      );
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  private loadSceneFile(file: File) {
 
     const reader = new FileReader();
     reader.onload = () => {
