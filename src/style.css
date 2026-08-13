@@ -215,6 +215,7 @@ textarea {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  margin-block: 0.25rem;
 }
 
 .extra-settings .stage-control-label {
@@ -225,6 +226,58 @@ textarea {
 .extra-settings .stage-control-value {
   min-width: 2ch;
   text-align: center;
+}
+
+.extra-settings .stage-control-row button {
+  min-width: 32px;
+  height: 32px;
+  border: 3px solid #000;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--third-color) 70%, black 30%);
+  color: #000;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 120ms steps(1, end);
+}
+
+.extra-settings .stage-control-row button:hover {
+  background: color-mix(in srgb, var(--second-color) 62%, black 38%);
+}
+
+.extra-settings .stage-control-row button:active {
+  background: color-mix(in srgb, var(--first-color) 62%, black 38%);
+}
+
+.extra-settings .stage-control-row button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.extra-settings .stage3-paper-size-select {
+  appearance: none;
+  min-height: 32px;
+  border: 3px solid #000;
+  border-radius: 0;
+  background-color: color-mix(in srgb, var(--third-color) 70%, black 30%);
+  color: #000;
+  padding: 0 2rem 0 0.6rem;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #000 50%),
+    linear-gradient(135deg, #000 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 12px,
+    calc(100% - 8px) 12px;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+}
+
+.extra-settings .stage3-paper-size-select:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
 }
 
 .extra-settings-switch {
@@ -248,26 +301,24 @@ textarea {
 }
 
 .extra-settings-toggle-track {
-  width: 2.9rem;
-  height: 1.6rem;
-  border-radius: 999px;
-  border: 2px solid #000;
+  width: 54px;
+  height: 30px;
+  border-radius: 0;
+  border: 3px solid #000;
   background: color-mix(in srgb, var(--first-color) 60%, black 40%);
-  padding: 2px;
+  padding: 3px;
   display: inline-flex;
   align-items: center;
-  transition:
-    background-color 180ms ease,
-    transform 180ms ease;
+  transition: background-color 120ms steps(1, end);
 }
 
 .extra-settings-toggle-knob {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 0;
   background: #fff;
-  border: 1px solid #000;
-  transition: transform 180ms ease;
+  border: 2px solid #000;
+  transition: transform 120ms steps(2, end);
 }
 
 .extra-settings-toggle-input:checked + .extra-settings-toggle-track {
@@ -277,12 +328,12 @@ textarea {
 .extra-settings-toggle-input:checked
   + .extra-settings-toggle-track
   .extra-settings-toggle-knob {
-  transform: translateX(1.25rem);
+  transform: translateX(24px);
 }
 
 .extra-settings-toggle-input:focus-visible + .extra-settings-toggle-track {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 
 .extra-settings-error-messages,
