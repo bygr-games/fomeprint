@@ -16,15 +16,18 @@ import {
 
 class TopUI extends KTUComponent {
   private isResetConfirmOpen = false;
+  private readonly onRequestResetConfirm = () => this.promptResetState();
 
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: baseBinding });
+    window.addEventListener(
+      "fomeprint:request-reset-confirm",
+      this.onRequestResetConfirm,
+    );
   }
 
   render(): Element {
-    const isResetDisabled = this.currentStage() === 1;
-
     return (
       <div class="top-ui">
         <div class="top-ui-content">
@@ -44,7 +47,6 @@ class TopUI extends KTUComponent {
             class="ui-square-action-button top-ui-corner-button top-ui-corner-button-right"
             onclick={() => this.promptResetState()}
             aria-label="Reset scene"
-            disabled={isResetDisabled}
           >
             {IconReset()}
           </button>
@@ -199,19 +201,7 @@ class TopUI extends KTUComponent {
     executeCommand(new UpdateEditorSceneSizeForAspectRatioCommand(aspectRatio));
   }
 
-  private currentStage(): number {
-    const stage = Number(this.bindingData["fomeprint.stage"]);
-    if (stage === 1 || stage === 2 || stage === 3) {
-      return stage;
-    }
-    return 1;
-  }
-
   private promptResetState() {
-    if (this.currentStage() === 1) {
-      return;
-    }
-
     this.isResetConfirmOpen = true;
     this.reRender();
   }
@@ -231,11 +221,6 @@ class TopUI extends KTUComponent {
     }
 
     this.isResetConfirmOpen = false;
-
-    if (this.currentStage() === 1) {
-      this.reRender();
-      return;
-    }
 
     executeCommand(new NewStateCommand());
     this.fitCanvasToCurrentPaperAspectRatio();
