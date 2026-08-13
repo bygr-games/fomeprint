@@ -15,6 +15,8 @@ import {
 } from "../managers/store_manager";
 
 class TopUI extends KTUComponent {
+  private isResetConfirmOpen = false;
+
   constructor(props: { binding?: string }) {
     const baseBinding = props.binding ?? "fomeprint.stage";
     super({ binding: baseBinding });
@@ -40,7 +42,7 @@ class TopUI extends KTUComponent {
           <button
             type="button"
             class="ui-square-action-button top-ui-corner-button top-ui-corner-button-right"
-            onclick={() => this.resetState()}
+            onclick={() => this.promptResetState()}
             aria-label="Reset scene"
             disabled={isResetDisabled}
           >
@@ -54,6 +56,32 @@ class TopUI extends KTUComponent {
           accept=".fomeprint.red,image/*"
           onchange={(event) => this.onLoadFileChange(event)}
         />
+        {this.isResetConfirmOpen && (
+          <div class="stage2-confirm-overlay" role="dialog" aria-modal="true">
+            <div class="stage2-confirm-modal">
+              <div class="stage2-confirm-title">Reset scene?</div>
+              <div class="top-ui-reset-confirm-message">
+                This will discard your current edits.
+              </div>
+              <div class="stage2-confirm-actions">
+                <button
+                  type="button"
+                  class="stage2-confirm-button stage2-confirm-cancel"
+                  onclick={() => this.cancelResetState()}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="stage2-confirm-button stage2-confirm-remove"
+                  onclick={() => this.confirmResetState()}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -121,7 +149,6 @@ class TopUI extends KTUComponent {
   }
 
   private loadSceneFile(file: File) {
-
     const reader = new FileReader();
     reader.onload = () => {
       const content = reader.result;
@@ -180,13 +207,39 @@ class TopUI extends KTUComponent {
     return 1;
   }
 
-  private resetState() {
+  private promptResetState() {
     if (this.currentStage() === 1) {
+      return;
+    }
+
+    this.isResetConfirmOpen = true;
+    this.reRender();
+  }
+
+  private cancelResetState() {
+    if (!this.isResetConfirmOpen) {
+      return;
+    }
+
+    this.isResetConfirmOpen = false;
+    this.reRender();
+  }
+
+  private confirmResetState() {
+    if (!this.isResetConfirmOpen) {
+      return;
+    }
+
+    this.isResetConfirmOpen = false;
+
+    if (this.currentStage() === 1) {
+      this.reRender();
       return;
     }
 
     executeCommand(new NewStateCommand());
     this.fitCanvasToCurrentPaperAspectRatio();
+    this.reRender();
   }
 }
 

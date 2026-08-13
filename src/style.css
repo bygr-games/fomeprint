@@ -489,6 +489,10 @@ textarea {
   font-weight: 600;
 }
 
+.top-ui-reset-confirm-message {
+  font-size: 13px;
+}
+
 .stage2-confirm-actions {
   display: flex;
   justify-content: flex-end;
