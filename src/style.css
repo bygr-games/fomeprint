@@ -435,9 +435,15 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  max-height: min(13svh, 112px);
+  max-height: min(16svh, 136px);
   overflow: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding-right: 2px;
+}
+
+.stickers-categories::-webkit-scrollbar {
+  display: none;
 }
 
 .stickers-category-button {
@@ -475,7 +481,32 @@ textarea {
   grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
   gap: 10px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--store-border-strong) color-mix(in srgb, var(--store-tile) 70%, transparent);
   padding: 2px 2px 4px;
+}
+
+.stickers-grid::-webkit-scrollbar {
+  width: 10px;
+}
+
+.stickers-grid::-webkit-scrollbar-track {
+  background: color-mix(in srgb, var(--store-tile) 70%, transparent);
+  border-radius: 999px;
+}
+
+.stickers-grid::-webkit-scrollbar-thumb {
+  background: color-mix(
+    in srgb,
+    var(--second-color-light) 70%,
+    var(--second-color) 30%
+  );
+  border: 2px solid color-mix(in srgb, var(--store-tile) 70%, transparent);
+  border-radius: 999px;
+}
+
+.stickers-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--store-border-strong);
 }
 
 .sticker-thumb-wrap {
