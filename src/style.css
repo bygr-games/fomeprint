@@ -482,7 +482,8 @@ textarea {
   gap: 10px;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--store-border-strong) color-mix(in srgb, var(--store-tile) 70%, transparent);
+  scrollbar-color: var(--store-border-strong)
+    color-mix(in srgb, var(--store-tile) 70%, transparent);
   padding: 2px 2px 4px;
 }
 
