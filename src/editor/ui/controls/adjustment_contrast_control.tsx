@@ -6,10 +6,7 @@ import {
 } from "fra.ktu.red-component";
 import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SetShaderFieldCommand } from "../../commands/shaders/set_shader_field_command";
-import {
-  getShaderParentLayerId,
-  getThingById,
-} from "../../helpers/active_helper";
+import { getThingById } from "../../helpers/active_helper";
 
 class AdjustmentContrastControl extends KTUComponent {
   private readonly adjustmentSteps = [0.2, 0.4, 0.6, 0.8, 1, 1.5, 3, 6, 12];
@@ -52,7 +49,7 @@ class AdjustmentContrastControl extends KTUComponent {
         target.id,
         "contrast",
         nextValue,
-        `editorScene.layers.!${getShaderParentLayerId(target.id)}.shaders`,
+        `editorScene.shaders`,
       ),
     );
   }

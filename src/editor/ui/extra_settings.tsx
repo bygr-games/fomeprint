@@ -4,7 +4,6 @@ import { AdjustmentBrightnessControlComponent } from "./controls/adjustment_brig
 import { AdjustmentContrastControlComponent } from "./controls/adjustment_contrast_control";
 import { BayerPixelSizeControlComponent } from "./controls/bayer_pixel_size_control";
 import { PosterizeThresholdControlComponent } from "./controls/posterize_threshold_control";
-import { getShaderParentLayerId } from "../helpers/active_helper";
 import { PAPER_SIZES } from "../helpers/paper_helper";
 import { executeCommand } from "../../ktu/helpers/commands_manager";
 import { UpdateEditorSceneSizeForAspectRatioCommand } from "../commands/fomeprint/update_editor_scene_size_for_aspect_ratio_command";
@@ -76,34 +75,18 @@ class ExtraSettings extends KTUComponent {
                 </span>
               </label>
             </div>
-            {!this.isThresholdMode() && (
-              <AdjustmentBrightnessControlComponent
-                binding={
-                  "editorScene.layers.!" +
-                  getShaderParentLayerId(
-                    this.bindingData["fomeprint.adjustmentShaderId"],
-                  ) +
-                  ".shaders.!" +
-                  DataStore.getInstance().getStore(
-                    "fomeprint.adjustmentShaderId",
-                  )
-                }
-              />
-            )}
-            {!this.isThresholdMode() && (
-              <AdjustmentContrastControlComponent
-                binding={
-                  "editorScene.layers.!" +
-                  getShaderParentLayerId(
-                    this.bindingData["fomeprint.adjustmentShaderId"],
-                  ) +
-                  ".shaders.!" +
-                  DataStore.getInstance().getStore(
-                    "fomeprint.adjustmentShaderId",
-                  )
-                }
-              />
-            )}
+            <AdjustmentBrightnessControlComponent
+              binding={
+                "editorScene.shaders.!" +
+                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
+              }
+            />
+            <AdjustmentContrastControlComponent
+              binding={
+                "editorScene.shaders.!" +
+                DataStore.getInstance().getStore("fomeprint.adjustmentShaderId")
+              }
+            />
             {!this.isThresholdMode() && (
               <BayerPixelSizeControlComponent
                 binding={

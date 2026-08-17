@@ -75,7 +75,6 @@ export class NewStateCommand implements ICommand {
     const cameraLayer = CameraLayer.getDefaultState("editorScene");
     cameraLayer.hFlip = true;
     cameraLayer.fillCanvas = true;
-    cameraLayer.shaders = [adjustmentShader];
 
     console.log(
       "NewStateCommand: creating new state with camera layer",
@@ -113,7 +112,7 @@ export class NewStateCommand implements ICommand {
         BackgroundLayer.getDefaultState("editorScene", "white"),
         cameraLayer,
       ],
-      shaders: [bnwShader, ditheringShader, posterizeShader],
+      shaders: [adjustmentShader, bnwShader, ditheringShader, posterizeShader],
       modulators: [],
       signals: [],
       assets: {},
@@ -150,15 +149,6 @@ export class NewStateCommand implements ICommand {
       "fomeprint.shaderIds",
       state.shaders
         .map((shader) => "editorScene.shaders.!" + shader.id)
-        .concat(
-          cameraLayer.shaders.map(
-            (shader) =>
-              "editorScene.layers.!" +
-              cameraLayer.id +
-              ".shaders.!" +
-              shader.id,
-          ),
-        )
         .join(","),
     );
     const activeThingId = DataStore.getInstance().getStore("activeThingId");

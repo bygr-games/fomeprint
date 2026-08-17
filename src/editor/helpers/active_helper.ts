@@ -69,18 +69,3 @@ export const getThingById = (id: number): LayerState | null => {
   }
   return null;
 };
-
-export const getShaderParentLayerId = (shaderId: number): number | null => {
-  const layers = DataStore.getInstance().getStore("editorScene.layers");
-  if (layers) {
-    for (const layer of layers) {
-      const shader = DataStore.getInstance().getStore(
-        "editorScene.layers.!" + layer.id + ".shaders.!" + shaderId,
-      );
-      if (shader) {
-        return layer.id;
-      }
-    }
-  }
-  return null;
-};

@@ -1,5 +1,4 @@
 import {
-  AdjustmentShader,
   cacheAsset,
   DataStore,
   type SceneState,
@@ -90,23 +89,6 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       videoLayer.hFlip = false;
       videoLayer.vFlip = false;
 
-      const cameraAdjustmentShader = cameraLayer.shaders.find(
-        (shader) => shader.type === "adjustment",
-      );
-      const adjustmentShader = AdjustmentShader.getDefaultState(
-        this.sceneStateId,
-      );
-      if (cameraAdjustmentShader) {
-        const {
-          id: _oldId,
-          name: _oldName,
-          type: _oldType,
-          ...fields
-        } = cameraAdjustmentShader as Record<string, unknown>;
-        Object.assign(adjustmentShader as Record<string, unknown>, fields);
-      }
-      videoLayer.shaders = [adjustmentShader];
-
       const cameraLayerIndex = sceneState.layers.findIndex(
         (layer) => layer.id === cameraLayer.id,
       );
@@ -137,10 +119,6 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
 
       DataStore.getInstance().setStore("fomeprint.cameraLayerId", null);
       DataStore.getInstance().setStore("fomeprint.videoLayerId", videoLayer.id);
-      DataStore.getInstance().setStore(
-        "fomeprint.adjustmentShaderId",
-        adjustmentShader.id,
-      );
 
       DataStore.getInstance().setStore("fomeprint.stage", 2);
     } catch (error) {
