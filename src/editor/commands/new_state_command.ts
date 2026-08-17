@@ -84,7 +84,6 @@ export class NewStateCommand implements ICommand {
     const isDitherMode = ditherThresholdMode === "dither";
     ditheringShader.visible = isDitherMode;
     posterizeShader.visible = !isDitherMode;
-    adjustmentShader.visible = isDitherMode;
 
     const defaultPaperAspectRatio = 1;
     const fittedSize = getViewportFittedSize(defaultPaperAspectRatio);
