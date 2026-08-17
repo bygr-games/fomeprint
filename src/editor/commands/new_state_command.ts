@@ -52,20 +52,6 @@ export class NewStateCommand implements ICommand {
 
     DataStore.getInstance().setStore("fomeprint.errorMessages", []);
 
-    try {
-      const autosavedState = window.localStorage.getItem("autosavedState");
-      if (autosavedState) {
-        const parsedState = JSON.parse(autosavedState);
-        if (parsedState?.data) {
-          window.localStorage.setItem(
-            "lastSessionState",
-            JSON.stringify(autosavedState),
-          );
-        }
-      }
-    } catch (e) {
-      console.error("Error loading autosaved state:", e);
-    }
     const adjustmentShader = AdjustmentShader.getDefaultState("editorScene");
     adjustmentShader.contrast =
       readStoredNumber(ADJUSTMENT_CONTRAST_STORAGE_KEY) ?? 3;

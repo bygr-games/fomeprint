@@ -98,13 +98,6 @@ export function executeCommand(command: ICommand) {
 
     DataStore.getInstance().touch("commandsQueue");
     clearRedo();
-    window.localStorage.setItem(
-      "autosavedState",
-      JSON.stringify({
-        data: DataStore.getInstance().getStore("editorScene"),
-        dataAt: Date.now(),
-      }),
-    );
   }
 }
 

@@ -153,10 +153,6 @@ export class FomeprintEditor {
     bottomUIContainer: HTMLElement,
     extraSettingsContainer: HTMLElement,
   ) {
-    console.log(
-      "Initializing FomeprintEditor with autosaved state:",
-      window.localStorage.getItem("autosavedState"),
-    );
     this.canvasContainer = canvasContainer;
     this.topUIContainer = topUIContainer;
     this.bottomUIContainer = bottomUIContainer;

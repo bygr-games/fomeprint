@@ -4,6 +4,8 @@ import {
   type ShaderLayerState,
 } from "fra.ktu.red-component";
 import type { ICommand } from "../icommand";
+import { executeCommand } from "../../../ktu/helpers/commands_manager";
+import { FireErrorMessageCommand } from "../fomeprint/fire_error_message_command";
 
 const SHADER_LOCAL_STORAGE_KEYS: Record<string, string> = {
   brightness: "fomeprint.adjustment.brightness",
@@ -75,6 +77,15 @@ export class SetShaderFieldCommand implements ICommand {
       return;
     }
 
-    window.localStorage.setItem(storageKey, String(value));
+    try {
+      window.localStorage.setItem(storageKey, String(value));
+    } catch (error) {
+      console.error("[shader] failed to save shader field", error);
+      executeCommand(
+        new FireErrorMessageCommand(
+          "Could not save shader settings to local storage.",
+        ),
+      );
+    }
   }
 }

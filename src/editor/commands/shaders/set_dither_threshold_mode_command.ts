@@ -1,5 +1,7 @@
 import { DataStore, type ShaderLayerState } from "fra.ktu.red-component";
 import type { ICommand } from "../icommand";
+import { executeCommand } from "../../../ktu/helpers/commands_manager";
+import { FireErrorMessageCommand } from "../fomeprint/fire_error_message_command";
 
 type DitherThresholdMode = "dither" | "threshold";
 
@@ -46,7 +48,16 @@ export class SetDitherThresholdModeCommand implements ICommand {
     const isDither = this.mode === "dither";
     bayerShader.visible = isDither;
     posterizeShader.visible = !isDither;
-    window.localStorage.setItem(DITHER_THRESHOLD_MODE_STORAGE_KEY, this.mode);
+    try {
+      window.localStorage.setItem(DITHER_THRESHOLD_MODE_STORAGE_KEY, this.mode);
+    } catch (error) {
+      console.error("[shader] failed to save dither mode", error);
+      executeCommand(
+        new FireErrorMessageCommand(
+          "Could not save dither/threshold mode to local storage.",
+        ),
+      );
+    }
 
     DataStore.getInstance().touch(`${owner}.!${bayerShader.id}`);
     DataStore.getInstance().touch(`${owner}.!${posterizeShader.id}`);
@@ -77,10 +88,19 @@ export class SetDitherThresholdModeCommand implements ICommand {
     const revertedMode: DitherThresholdMode = this.previousVisibility.bayer
       ? "dither"
       : "threshold";
-    window.localStorage.setItem(
-      DITHER_THRESHOLD_MODE_STORAGE_KEY,
-      revertedMode,
-    );
+    try {
+      window.localStorage.setItem(
+        DITHER_THRESHOLD_MODE_STORAGE_KEY,
+        revertedMode,
+      );
+    } catch (error) {
+      console.error("[shader] failed to save reverted dither mode", error);
+      executeCommand(
+        new FireErrorMessageCommand(
+          "Could not save dither/threshold mode to local storage.",
+        ),
+      );
+    }
 
     DataStore.getInstance().touch(`${owner}.!${bayerShader.id}`);
     DataStore.getInstance().touch(`${owner}.!${posterizeShader.id}`);

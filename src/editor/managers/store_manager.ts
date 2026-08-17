@@ -233,7 +233,8 @@ export const saveUploadedStickersToStorage = (uploadedAssets: string[]) => {
       uploadedStickersStorageKey,
       JSON.stringify(uploadedAssets),
     );
-  } catch {
+  } catch (error) {
+    console.error("[store] failed to save uploaded stickers", error);
     executeCommand(
       new FireErrorMessageCommand(
         "Could not save uploaded stickers to local storage.",

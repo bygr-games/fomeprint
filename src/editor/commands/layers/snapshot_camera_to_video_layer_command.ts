@@ -109,14 +109,6 @@ export class SnapshotCameraToVideoLayerCommand implements ICommand {
       touchThingsById(oldActiveThingId);
       touchThingsById(videoLayer.id);
 
-      window.localStorage.setItem(
-        "autosavedState",
-        JSON.stringify({
-          data: sceneState,
-          dataAt: Date.now(),
-        }),
-      );
-
       DataStore.getInstance().setStore("fomeprint.cameraLayerId", null);
       DataStore.getInstance().setStore("fomeprint.videoLayerId", videoLayer.id);
 
