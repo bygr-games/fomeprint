@@ -8,7 +8,12 @@ import { executeCommand } from "../../../ktu/helpers/commands_manager";
 import { SnapshotCameraToVideoLayerCommand } from "../../commands/layers/snapshot_camera_to_video_layer_command";
 import { SetLayerFieldCommand } from "../../commands/layers/set_layer_field_command";
 import { getThingById } from "../../helpers/active_helper";
-import { IconSnapshot, IconSwap, IconMirror } from "../../helpers/icons";
+import {
+  IconSnapshot,
+  IconSwap,
+  IconMirror,
+  IconCamera,
+} from "../../helpers/icons";
 import { SwapCameraCommand } from "../../commands/fomeprint/swap_camera_command";
 
 class Stage1 extends KTUComponent {
@@ -58,7 +63,7 @@ class Stage1 extends KTUComponent {
             class="ui-square-action-button"
             onclick={() => this.snapshotCameraLayer()}
           >
-            {IconSnapshot()}
+            {IconCamera()}
           </button>
         </div>
       </div>

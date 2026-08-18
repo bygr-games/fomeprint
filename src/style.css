@@ -128,12 +128,13 @@ textarea {
     1px,
     calc(var(--ui-bar-height) - (var(--ui-bar-padding) * 2))
   );
+  --stage-square-button-size: calc(var(--ui-square-button-size) * 2);
   display: block;
   text-align: center;
-  height: var(--ui-bar-height);
+  height: calc((var(--ui-bar-padding) * 2) + var(--stage-square-button-size));
   padding: var(--ui-bar-padding);
   background-color: var(--third-color-dark);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .bottom-ui .stage-panel {
@@ -149,6 +150,12 @@ textarea {
   align-items: stretch;
   gap: 0.5rem;
   width: 100%;
+}
+
+.bottom-ui .stage-actions .ui-square-action-button {
+  flex: 0 0 var(--stage-square-button-size);
+  width: var(--stage-square-button-size);
+  height: var(--stage-square-button-size);
 }
 
 .bottom-ui .stage-actions > .ui-square-action-button:last-child {
