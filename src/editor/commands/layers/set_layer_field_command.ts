@@ -18,12 +18,6 @@ export class SetLayerFieldCommand implements ICommand {
     this.id = id;
     this.field = field;
     this.value = value;
-
-    executeCommand(
-      new FireErrorMessageCommand(
-        `SetLayerFieldCommand: ${id}, ${field}, ${value}`,
-      ),
-    );
   }
   execute(): void {
     const layers: LayerState[] =

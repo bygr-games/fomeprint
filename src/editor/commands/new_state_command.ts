@@ -9,7 +9,11 @@ import {
   PosterizeShader,
 } from "fra.ktu.red-component";
 import { type ICommand } from "./icommand";
-import { clearCommands, clearRedo } from "../../ktu/helpers/commands_manager";
+import {
+  clearCommands,
+  clearRedo,
+  executeCommand,
+} from "../../ktu/helpers/commands_manager";
 import { type SceneState } from "fra.ktu.red-component";
 import {
   syncLayerBoundingBoxesByActiveThingId,
@@ -17,6 +21,7 @@ import {
 } from "../helpers/active_helper";
 import { refreshAvailableCameras } from "../managers/camera_manager";
 import { getViewportFittedSize } from "../helpers/viewport_fit";
+import { FireErrorMessageCommand } from "./fomeprint/fire_error_message_command";
 
 const ADJUSTMENT_BRIGHTNESS_STORAGE_KEY = "fomeprint.adjustment.brightness";
 const ADJUSTMENT_CONTRAST_STORAGE_KEY = "fomeprint.adjustment.contrast";
@@ -48,6 +53,7 @@ export class NewStateCommand implements ICommand {
     this.payload = payload;
   }
   execute(): void {
+    executeCommand(new FireErrorMessageCommand("Welcome to Fomeprint!"));
     refreshAvailableCameras();
 
     DataStore.getInstance().setStore("fomeprint.errorMessages", []);

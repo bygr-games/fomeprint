@@ -163,8 +163,6 @@ export class FomeprintEditor {
     executeCommand(new NewStateCommand());
     this.updateHistoryStage(this.currentStage(), true);
 
-    executeCommand(new FireErrorMessageCommand("Welcome to Fomeprint!"));
-
     this.fitCanvasToViewport();
 
     this.canvasContainer.appendChild(
