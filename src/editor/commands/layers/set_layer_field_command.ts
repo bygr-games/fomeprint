@@ -4,8 +4,6 @@ import {
   type LayerState,
 } from "fra.ktu.red-component";
 import type { ICommand } from "../icommand";
-import { FireErrorMessageCommand } from "../fomeprint/fire_error_message_command";
-import { executeCommand } from "../../../ktu/helpers/commands_manager";
 
 export class SetLayerFieldCommand implements ICommand {
   historyLabel = "SetLayerFieldCommand";
